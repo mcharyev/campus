@@ -1,0 +1,158 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Department{% endblock %}
+{% block customcss %}
+<style>
+.jtable-dialog-form {
+    display: block;
+    width: 1260px;
+    -moz-column-gap: 40px;
+    -webkit-column-gap: 40px;
+    column-gap: 40px;
+    -moz-column-count: 2;
+    -webkit-column-count: 2;
+    column-count: 2;
+}
+    </style>
+{% endblock %}
+{% block main %} <a href='/faculty/department/new'>New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#main').jtable({
+                title: 'Departments',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'd.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/faculty/department/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting,
+                                type: 'POST',
+                                dataType: 'json',
+                                data: postData,
+                                success: function (data) {
+                                    $dfd.resolve(data);
+                                },
+                                error: function (data) {
+                                    $dfd.reject();
+                                }
+                            });
+                        });
+                    },
+                    deleteAction: function (postData) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/faculty/department/delete',
+                                type: 'POST',
+                                dataType: 'json',
+                                data: postData,
+                                success: function (data) {
+                                    $dfd.resolve(data);
+                                },
+                                error: function (data) {
+                                    $dfd.reject();
+                                }
+                            });
+                        });
+                    }
+                },
+                fields: {
+                    row_number: {
+                        title: 'No',
+                        create: false,
+                        edit: false,
+                        width: '3%'
+                    },
+                    id: {
+                        title: 'Id',
+                        key: true,
+                        create: false,
+                        edit: false,
+                        list: true,
+                    },
+                    name_english: {
+                        title: 'Name English',
+                        type: 'textarea',
+                        width: '10%',
+                        list: true
+                    },
+                    name_turkmen: {
+                        title: 'Name Turkmen',
+                        type: 'textarea',
+                        width: '10%',
+                        list: true
+                    },
+                    system_id: {
+                        title: 'System Id',
+                        type: 'text',
+                        width: '5%',
+                        list: true
+                    },
+                    letter_code: {
+                        title: 'Letter code',
+                        type: 'text',
+                        width: '5%',
+                        list: true
+                    },
+                    department_head_id: {
+                        title: 'Department Head',
+                        options: '/valuepairs/teacher/id/lastname,firstname/lastname ASC',
+                        width: '10%',
+                        list: true
+                    },
+                    faculty_id: {
+                        title: 'Faculty',
+                        options: '/valuepairs/faculty/id/name_english/id ASC',
+                        width: '10%',
+                        list: true
+                    },
+                    type: {
+                        title: 'Type',
+                        options: {'0': 'Non-graduating', '1': 'Graduating'},
+                        width: '5%',
+                        defaultValue: '1',
+                        list: true
+                    },
+                    status: {
+                        title: 'Status',
+                        options: {'0': 'Disabled', '1': 'Enabled'},
+                        width: '5%',
+                        defaultValue: '1',
+                        list: true
+                    },
+                    actions: {
+                        title: 'Actions',
+                        sorting: false,
+                        list: true,
+                        edit: false,
+                        create: false,
+                        display: function (data)
+                        {
+                            info = "<a href='/faculty/department/edit/" + data.record.id + "'>Edit</a>";
+                            info += "<br><a href='/faculty/departmentworkitem/department/" + data.record.system_id + "/{{ current_year }}'>Workload</a>";
+                            info += "<br><a href='/faculty/attendance/totalabsences/department/" + data.record.id + "'>Total absences</a>";
+                            info += "<br><a href='/faculty/departmentworksets/" + data.record.system_id + "/{{ current_year }}'>Worksets</a>";
+                            info += "<br><a href='/faculty/departmentworkreport/" + data.record.id + "/{{ current_year }}/1/'>Work report</a>";
+                            return info;
+                        }
+
+                    }
+                }
+            });
+            $('#main').jtable('load');
+        });
+        function showerror(str)
+        {
+            $('#error').html(str);
+        }
+    </script>
+{% endblock %}

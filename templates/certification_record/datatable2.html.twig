@@ -1,0 +1,56 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Certification Records{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='firstname'>Firstname</option>
+                <option value='lastname'>Lastname</option>
+                <option value='patronym'>Patronym</option>
+                <option value='tags'>Tags</option>
+                <option value='data'>Data</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form> <a href="/registrar/certificationrecord/new">New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+        <table id="mainTable" class="table table-sm">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>ID</th>
+                    <th>Registration number</th>
+                    <th>Protocol Number</th>
+                    <th>Lastname</th>
+                    <th>Firstname</th>
+                    <th>Patronym</th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>
+                    <th>No</th>
+                    <th>ID</th>
+                    <th>Registration number</th>
+                    <th>Protocol Number</th>
+                    <th>Lastname</th>
+                    <th>Firstname</th>
+                    <th>Patronym</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#mainTable').DataTable({
+                "ajax": '/registrar/certificationrecord/datalist'
+            });
+        });
+    </script>
+{% endblock %}

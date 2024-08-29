@@ -1,0 +1,112 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Department Work Load{% endblock %}
+{% block customcss %}
+    <style>
+        .verticaltext {
+            -webkit-transform: rotate(-90deg);
+            text-align: center;
+            vertical-align: middle;
+        }
+        .extrasmall {font-size:11px;}
+        .studyProgramRow {font-size:12px;}
+        .editable {border:0px;width:25px;}
+        .low { color: #d6d6d4;}
+        .normal {color: black;}
+        .green {color:green;}
+        .red {color:red; font-size:15px; background-color:red; color:white; font-weight:bold;}
+        .blue {color:blue; font-size:15px; font-weight:bold;}
+    </style>
+{% endblock %}
+{% block main %}
+    <div style="margin:auto;">
+        <table class="table table-sm table-bordered extrasmall">
+            <thead>
+                <tr>
+                    {% for z in 1..29 %}
+                        <th style='vertical-align:middle;'>{{ workcolumnNames[z] }}</th>
+                        {% endfor %}
+                </tr>
+                <tr>
+                    {% for z in 1..29 %}
+                        <th>{{ z }}</th>
+                        {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for departmentSet in departmentSets %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            {{ departmentSet.department.nameTurkmen }}
+                            <a href='/faculty/departmentworkitem/department/{{ departmentSet.department.systemId }}/2020/0'>Load</a> | 
+                            <a href='/faculty/departmentworksets/{{ departmentSet.department.systemId }}/2020'>Worksets</a>
+                        </td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        {% for z in 9..29 %}
+                            {% if departmentSet.totalSums[z]==0 %}
+                                {% set colorclass="low" %}
+                            {% else %}
+                                {% set colorclass="normal" %}
+                            {% endif %}
+                            <td class="{{ colorclass }}">{{ departmentSet.totalSums[z] }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+                <tr>
+                    <td></td>
+                    <td>HYYÖU</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    {% for z in 9..29 %}
+                        {% if universityTotalSums[z]==0 %}
+                            {% set colorclass="low" %}
+                        {% else %}
+                            {% set colorclass="normal" %}
+                        {% endif %}
+                        <td class="{{ colorclass }}">{{ universityTotalSums[z] }}</td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+{#        {% if groupcourses|length>0 %}
+            <table class="table table-sm table-bordered table-hover extrasmall" style="width: auto;">
+                {% for groupcourse in departmentSet.groupcourses %}
+                    <tr><td>{{ groupcourse.course }}</td>
+                        <td>{{ groupcourse.group.letterCode }}</td>
+                        <td>{{ groupcourse.group.totalStudentCount }}</td>
+                        <td>{{ groupcourse.semester }}</td>
+                        <td>{{ groupcourse.code }}</td>
+                        <td>
+                            <a href='/faculty/departmentworkitem/department/{{ department.systemid }}/{{ year }}/1'>View</a> |
+                            <div id='unassigned{{ groupcourse.code }}'></div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}#}
+        <br><br>
+    </div>
+    {% set fieldtype='hidden' %}
+    <form id='mainform' name='mainform'>
+        <input type="{{ fieldtype }}" size=10 name='action' id='action' placeholder='action' value=''>
+        <input type="{{ fieldtype }}" size=10 name='div_id' id='div_id' placeholder='div_id' value=''>
+        <input type="{{ fieldtype }}" size=10 name='workitem_id' id='workitem_id' placeholder='workitem_id' value=''>
+        <input type="{{ fieldtype }}" size=10 name='field' id='field' placeholder='field' value=''>
+        <input type="{{ fieldtype }}" size=10 name='value' id='value' placeholder='value' value=''>
+        <input type="{{ fieldtype }}" size=10 name='bigdata' id='bigdata' placeholder='value' value=''>
+    </form>
+{% endblock %}
+{% block customjs %}
+    <script>
+    </script>
+{% endblock %}{# empty Twig template #}

@@ -1,0 +1,59 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+    </style>
+{% endblock %}
+{% block moduletitle %}Schedule Item Custom Functions{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div style="margin:auto;">
+        <h3>Schedule Item Custom Functions</h3>
+        <a class="btn btn-outline-success" href='/custom/checkduplicates/'>Check duplicate schedules</a> 
+        <p>
+            {{ content|raw }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            $('#mainTable').DataTable({
+                dom: 'Bfrtip',
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    ['10 rows', '25 rows', '50 rows', 'Show all']
+                ],
+                iDisplayLength: -1,
+                buttons: [
+                    'pageLength', 'copy', 'excel', 'pdf'
+                ]
+            });
+        });
+
+        function deleteItem(id)
+        {
+            var fd = new FormData();
+            fd.append('id', id);
+            $.ajax({
+                url: '/faculty/scheduleitem/delete',
+                type: 'POST',
+                data: fd,
+                success: function (data) {
+                    console.log(data);
+                    $("#info" + id).html(data.Result);
+                },
+                error: function (request, status, error) {
+                    console.log(request.responseText);
+                    $('#info' + id).html(request.responseText);
+                },
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+        }
+    </script>
+{% endblock %}

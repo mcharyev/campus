@@ -1,0 +1,19 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        b {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}{{pageTitle}}{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div style="margin:auto;">
+        <h3>{{ pageTitle }}</h3>
+<p>
+            {{ pageContent|raw }}
+    </div>
+{% endblock %}
+{% block customjs %}
+{% endblock %}

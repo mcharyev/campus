@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+{% block customcss %}
+    <style>
+        #employee {font-size: 30px;text-align:center;}
+        .employee_number
+        {
+            font-size:30px;
+            border-radius:0px;
+        }
+    </style>
+{% endblock %}
+{% block navbar %}
+    {% if is_granted('ROLE_USER') %}
+        <nav class="navbar navbar-expand-md navbar-light fixed-top" style="background-color: #28ad4b; color:#ffffff;">
+            <!--<a class="navbar-brand" href="#">CAMPUS</a>-->
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Ulanyjy: {{ app.user.username }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/library/libraryitem">Home <span class="sr-only">(current)</span></a>
+                    </li>
+                    {% if is_granted('ROLE_LIBRARY') %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/library/libraryitem/loanreturn">Loan-Return</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/library/libraryloan">Loans</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="dropdown05" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Collection</a>
+                            <div class="dropdown-menu" aria-labelledby="dropdown05">
+                                <a class="dropdown-item" href="/library/libraryitem">Items</a>
+                                <a class="dropdown-item" href="/library/electroniclibraryitem">Electronic Items</a>
+                                <a class="dropdown-item" href="/library/publication">Publications</a>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/publiclibrary/{{ libraryUnit.systemId }}">Public page</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="dropdown04" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Reports</a>
+                            <div class="dropdown-menu" aria-labelledby="dropdown04">
+                                <a class="dropdown-item" href="/library/report/topreaders">Top readers</a>
+                                <a class="dropdown-item" href="/library/report/topitems">Top items</a>
+                                <a class="dropdown-item" href="/library/report/loans">Loans</a>
+                            </div>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/account" class="menu_item">My account</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout"> Logout</a>
+                    </li>
+                    {% if is_granted('ROLE_PREVIOUS_ADMIN') %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ path('app_index', {'_switch_user': '_exit'}) }}">Exit impersonation</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </nav>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+        .bold {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Reference Documents{% endblock %}
+{% block main %}
+    <h4>Reference Documents</h4>
+    {% set itemNumber = 0 %}
+    <table class="table table-bordered table-sm table-compact table-striped" id="mainTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Authority</th>
+                <th>Note</th>
+                <th>Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for document in documents %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td width='50%'>{{ document.title }}</td>
+                    <td>{{ documentTypes[document.type] }}</td>
+                    <td width='8%'>{{ document.date|date('Y-m-d') }}</td>
+                    <td>{{ document.authority }}</td>
+                    <td>{{ document.note }}</td>
+                    <td><a href="/reference_document/downloadfile/{{ document.id }}">{{ document.link }}</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#mainTable').DataTable({
+                dom: 'Bfrtip',
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    ['10 rows', '25 rows', '50 rows', 'Show all']
+                ],
+                buttons: [
+                    'pageLength', 'copy', 'excel', 'pdf'
+                ],
+                pageLength: 25,
+                order: [[ 3, 'desc' ]]
+            });
+        });
+    </script>
+{% endblock %}

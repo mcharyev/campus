@@ -1,0 +1,725 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {
+            font-size: 10px;
+        }
+        .main {
+            background-color: #ebebeb;
+        }
+        .columnName {
+            vertical-align: middle;
+        }
+        .low {
+            color: #d6d6d4;
+        }
+        .normal {
+            color: black;
+        }
+        .red {
+            color: red;
+            font-weight: bold;
+        }
+        th {
+            background-color: #F5F5F5
+        }
+        tfoot {
+            font-weight: bold;
+            font-size: 12px;
+            background-color: #F9F9F9
+        }
+        .centered {
+            vertical-align: middle;
+            text-align: center;
+        }
+        .table-title {
+            margin-top:10px;
+            margin-bottom:10px;
+        }
+    </style>
+{% endblock %}
+{% block moduletitle %}Department Work Report
+{% endblock %}
+{% block main %}
+    <br>
+    <div style="text-align:center;">
+        <center>
+            <div>
+                <span class='excellable' data-excel='{"cell":"C3"}'>{{ department.faculty.nameTurkmen }}</span>
+                <h5>
+                    Department Workload Report for:
+                    <span class='excellable' data-excel='{"cell":"C4"}'>{{ department.nameTurkmen }}</span><br>
+                </h5>
+                Department Head:
+                <span class='excellable' data-excel='{"cell":"C5"}'>{{ department.departmenthead.fullname }}</span>
+            </div>
+            {% set monthNamesEnglish = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] %}
+            {% set monthNamesTurkmen = ['ýanwar', 'fewral', 'mart', 'aprel', 'maý', 'iýun', 'iýul', 'awgust', 'sentýabr', 'oktýabr', 'noýabr', 'dekabr'] %}
+            {% set semesterNames = ['','I', 'II', 'III'] %}
+            {% set workColumnTexts = ['', 'T/b', 'Ady', 'Iş ýüki', 'Okuw ý.', 'Tal. sn.', 'Tap. sn.', 'Top. sn', 'Tpç sn.',
+            'UOM', 'UOJ', 'AOM', 'AOJ', 'TOM', 'TOJ', 'Berk.s.', 'Has.', 'Ara. sy.', 'Jem. sy.', 'Döw. sy.', 'MÝTÖI',
+            'Tab. barl.', 'Ön. tej.', 'Dip.ýolb.', 'Dip. gor.', 'D. bäsl.', 'Sap. gatn.', 'Fakul.kaf. ý', 'Syn ý.', 'Jemi'] %}
+            {% set workloadNames = ['1,00', '0,75', '0,50', '0,25', 'Başga', 'Sagat.', 'Çalyşma'] %}
+            {% for month in months %}
+                <div class='table-title'>
+                    Month:
+                    {{ monthNamesTurkmen[month - 1] }}&nbsp;&nbsp;&nbsp;
+                    <button onclick="download('template_department_monthly_report.xlsx', 'department_monthly_report_{{ department.nameEnglish }}_{{ month }}.xls', 10,{{ month }} , '{{ monthNamesTurkmen[month - 1] }}',{{ year }} )"><img src='/build/images/icons8-excel-24.png' alt='download exce file'></button>
+                </div>
+                <table class='table table-sm table-bordered table-hover extrasmall'>
+                    <thead>
+                        <tr>
+                            {% for workColumn in workColumns %}
+                                <th class='centered'>
+                                    {{ workColumn }}
+                                </th>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            {% for workColumn in workColumns %}
+                                <th class='centered'>
+                                    {{ workColumnTexts[workColumn] }}
+                                </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for teacherWork in teacherWorksMonths[month] %}
+                            {% if teacherWork.worksums[29] > 0  %}
+                                <tr class='excellablerow_{{ month }}'>
+                                    <td class='centered'>{{ loop.index }}</td>
+                                    <td class='centered'>
+                                        <a href='/faculty/teacherworkreport/{{ teacherWork.teacher.id }}/{{ teacherWork.teacherWorkSet.id }}/{{ year }}/{{ semester }}'>{{ teacherWork.teacher.fullname }}</a>
+                                    </td>
+                                    <td class='centered'>{{ workloadNames[teacherWork.workload] }}
+                                        {{ teacherWork.note }}</td>
+                                        {% for u in 4..28 %}
+                                            {% if teacherWork.worksums[u] == 0  %}
+                                                {% set colorClass = 'low' %}
+                                            {% else %}
+                                                {% set colorClass = 'normal' %}
+                                            {% endif %}
+                                        <td class='{{ colorClass }} centered'>{{ teacherWork.worksums[u] }}</td>
+                                    {% endfor %}
+                                    {% if teacherWork.worksums[29] == 0  %}
+                                        {% set colorClass = 'low' %}
+                                    {% else %}
+                                        {% set colorClass = 'normal' %}
+                                    {% endif %}
+                                    <td class='{{ colorClass }} centered'>{{ teacherWork.worksums[29] }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr id='footerrow_{{ month }}' class='boldtext'>
+                            <td></td>
+                            <td class='centered'>JEMI</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            {% for u in 9..29 %}
+                                {% if departmentMonthlySums[month][u] == 0  %}
+                                    {% set colorClass = 'low' %}
+                                {% else %}
+                                    {% set colorClass = 'normal' %}
+                                {% endif %}
+                                <td class='{{ colorClass }} centered'>
+                                    {{ departmentMonthlySums[month][u] }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    </tfoot>
+                </table>
+            {% endfor %}
+            <div class='table-title'>Summary by Teachers
+                {% if is_granted("ROLE_SPECIALIST") %}
+                    <a href='/faculty/departmentworkitem/department/{{ department.systemId }}/{{ year }}'>Department Workload</a>
+                    |
+                    <a href='/faculty/departmentworkreport/{{ department.id }}/{{ year }}/{{ semester }}/1'>Check view</a>
+                {% endif %}
+                <button onclick="downloadSemester('template_department_semester_report.xlsx', 'department_semester_report_{{ department.nameEnglish }}_{{ year }}_{{ semester }}.xls', 10,{{ semester }} , '{{ semesterNames[semester] }}',{{ year }} , 'byteacher')"><img src='/build/images/icons8-excel-24.png' alt='download exce file'></button>
+            </div>
+            <table id="byteacher" class='table table-sm table-bordered table-hover extrasmall'>
+                <thead>
+                    <tr>
+                        {% for workColumn in workColumns %}
+                            <th>
+                                {{ workColumn }}</th>
+                            {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for workColumn in workColumns %}
+                            <th class='centered'>
+                                {{ workColumnTexts[workColumn] }}</th>
+                            {% endfor %}
+                    </tr>
+                </thead>
+                {% set replacedSessionSum=0 %}
+                <tbody>
+                    {% for teacherWork in teacherWorks %}
+                        <tr class='semester_excellablerow'>
+                            <td class='centered'>{{ loop.index }}</td>
+                            <td class='centered'>
+                                <a href='/faculty/teacherworkreport/{{ teacherWork.teacher.id }}/{{ teacherWork.teacherWorkSet.id }}/{{ year }}/{{ semester }}'>{{ teacherWork.teacher.fullname }}</a>
+                                {#(<a href="javascript:viewOrder('viewOrderUp',{{ teacherWork.teacherWorkSet.id }});">up</a>
+                                                                                                                                                                                                        <a href="javascript:viewOrder('viewOrderDown',{{ teacherWork.teacherWorkSet.id }});">down</a>)#}
+                                <span id="msg{{ teacherWork.teacherWorkSet.id }}"></span>
+                            </td>
+                            <td class='centered'>
+                                <a href='/faculty/teacherjournalnew/{{ teacherWork.teacher.id }}/{{ teacherWork.teacherWorkSet.id }}/{{ year }}/{{ semester }}'>{{ workloadNames[teacherWork.workload] }}
+                                    {{ teacherWork.note }}</a>
+                            </td>
+                            {% for u in 4..28 %}
+                                {% if teacherWork.totalsums[u] == 0  %}
+                                    {% set colorClass = 'low' %}
+                                {% else %}
+                                    {% set colorClass = 'normal' %}
+                                {% endif %}
+                                <td class='{{ colorClass }} centered'>
+                                    {{ teacherWork.totalsums[u] }}
+                                    {#                                    / {{ teacherWork.loadSums[u] }}#}
+                                </td>
+                            {% endfor %}
+                            {% if teacherWork.totalsums[29] == 0 and teacherWork.loadSums[29] == 0 %}
+                                {% set colorClass = 'low' %}
+                            {% else %}
+                                {% set colorClass = 'normal' %}
+                            {% endif %}
+                            <td class='{{ colorClass }} centered'>
+                                {{ teacherWork.totalsums[29] }} / {{ teacherWork.loadSums[29] }}
+                                {% if viewType==1 %}
+                                    {% if semester==1 %}
+                                        {%  set worksetReplacedSessionSum = teacherWork.teacherWorkSet.replacedSessionSum1 %}
+                                    {% elseif semester==2 %}
+                                        {%  set worksetReplacedSessionSum = teacherWork.teacherWorkSet.replacedSessionSum2 %}
+                                    {% elseif semester==3 %}
+                                        {%  set worksetReplacedSessionSum = teacherWork.teacherWorkSet.replacedSessionSum3 %}
+                                    {% endif %}
+                                    <br>({{ teacherWork.loadSums[29]-teacherWork.totalsums[29] }} = {{ worksetReplacedSessionSum }})
+                                    {% set replacedSessionSum = replacedSessionSum + worksetReplacedSessionSum %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if teacherWork.replacedSums[29]>0 %}
+                            <tr class='semester_excellablerow'>
+                                <td class='centered'></td>
+                                <td class='centered'>
+                                    Çalyşmalar
+                                </td>
+                                <td class='centered'></td>
+                                {% for u in 4..28 %}
+                                    {% if teacherWork.replacedSums[u] == 0  %}
+                                        {% set colorClass = 'low' %}
+                                    {% else %}
+                                        {% set colorClass = 'normal' %}
+                                    {% endif %}
+                                    <td class='{{ colorClass }} centered'>
+                                        {{ teacherWork.replacedSums[u] }}
+                                        {#                                    / {{ teacherWork.loadSums[u] }}#}
+                                    </td>
+                                {% endfor %}
+                                {% if teacherWork.replacedSums[29] == 0  %}
+                                    {% set colorClass = 'low' %}
+                                {% else %}
+                                    {% set colorClass = 'normal' %}
+                                {% endif %}
+                                <td class='{{ colorClass }} centered'>
+                                    {{ teacherWork.replacedSums[29] }}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    {#            <tr class='semester_excellablerow'>
+                                                                                                                                                                                                        <td class='centered'></td>
+                                                                                                                                                                                                        <td class='centered'>
+                                                                                                                                                                                                        Çalyşmalar
+                                                                                                                                                                                                        </td>
+                                                                                                                                                                                                        <td class='centered'>
+                                                                                                                                                                                                        </td>
+                                                                                                                                                                                                        {% for u in 4..28 %}
+                                                                                                                                                                                                        {% if departmentSubstitutions[u] == 0  %}
+                                                                                                                                                                                                        {% set colorClass = 'low' %}
+                                                                                                                                                                                                        {% else %}
+                                                                                                                                                                                                        {% set colorClass = 'normal' %}
+                                                                                                                                                                                                        {% endif %}
+                                                                                                                                                                                                        <td class='{{ colorClass }} centered'>
+                                                                                                                                                                                                        {{ departmentSubstitutions[u] }} 
+                                                                                                                                                                                                        </td>
+                                                                                                                                                                                                        {% endfor %}
+                                                                                                                                                                                                        {% if departmentSubstitutions[29] == 0  %}
+                                                                                                                                                                                                        {% set colorClass = 'low' %}
+                                                                                                                                                                                                        {% else %}
+                                                                                                                                                                                                        {% set colorClass = 'normal' %}
+                                                                                                                                                                                                        {% endif %}
+                                                                                                                                                                                                        <td class='{{ colorClass }} centered'>
+                                                                                                                                                                                                        {{ departmentSubstitutions[29] }} / {{ replacedSessionSum }}
+                                                                                                                                                                                                        </td>
+                                                                                                                                                                                                        </tr>
+                                                                                                                                                                                                        #}
+                </tbody>
+                <tfoot>
+                    <tr class='semester_footerrow'>
+                        <td></td>
+                        <td class='centered'>JEMI</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        {% for u in 9..29 %}
+                            {% if totalSums[u] == 0  %}
+                                {% set colorClass = 'low' %}
+                            {% else %}
+                                {% set colorClass = 'normal' %}
+                            {% endif %}
+                            <td class='{{ colorClass }} centered'>{{ totalSums[u] }} / {{ totalLoadSums[u] }}</td>
+                        {% endfor %}
+                    </tr>
+                </tfoot>
+            </table>
+            <div class='table-title'>
+                Summary by Month
+                <button onclick="downloadSemester('template_department_summary_by_month_report.xlsx', 'department_summary_by_month_report_{{ department.nameEnglish }}_{{ year }}_{{ semester }}.xls', 10,{{ semester }} , '{{ semesterNames[semester] }}',{{ year }} , 'bymonth')"><img src='/build/images/icons8-excel-24.png' alt='download exce file'></button>
+            </div>
+            <table id="bymonth" class='table table-sm table-bordered extrasmall'>
+                <thead>
+                    <tr>
+                        {% for workColumn in workColumns %}
+                            <th>
+                                {{ workColumn }}</th>
+                            {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for workColumn in workColumns %}
+                            <th class='centered'>
+                                {{ workColumnTexts[workColumn] }}</th>
+                            {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for month in months %}
+                        <tr class='semester_excellablerow'>
+                            <td class='centered'>{{ loop.index }}</td>
+                            <td class='centered'>{{ monthNamesTurkmen[month-1]|title }}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            {% for u in 9..29 %}
+                                {% if departmentMonthlySums[month][u] == 0  %}
+                                    {% set colorClass = 'low' %}
+                                {% else %}
+                                    {% set colorClass = 'normal' %}
+                                {% endif %}
+                                <td class='{{ colorClass }} centered'>
+                                    {{ departmentMonthlySums[month][u] }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class='semester_excellablerow'>
+                        <td></td>
+                        <td class='centered'>JEMI</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        {% for u in 9..29 %}
+                            {% if totalSums[u] == 0  %}
+                                {% set colorClass = 'low' %}
+                            {% else %}
+                                {% set colorClass = 'normal' %}
+                            {% endif %}
+                            <td class='{{ colorClass }} centered'>
+                                {{ totalSums[u] }}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                </tfoot>
+            </table>
+            <div  class='table-title'>
+                <span>Department Substitutions</span>
+                <button onclick="downloadSubstitutions('template_department_semester_substitutions.xlsx', 'department_semester_substitutions_{{ department.nameEnglish }}_{{ semester }}.xls', 10, {{ semester }}, '{{ semesterNames[semester] }}',{{ year }} , '{{ department.nameTurkmen }}')"><img src='/build/images/icons8-excel-24.png' alt='download exce file'></button>
+            </div>
+            <div>
+                <table class="table table-sm table-bordered extrasmall" style="width:auto;">
+                    <thead>
+                    <th>No.</th>
+                    <th>Course name</th>
+                    <th>Substituted for</th>
+                    <th>Substituted by</th>
+                    <th>Workset</th>
+                    <th>Old date</th>
+                    <th>New date</th>
+                    <th>Old session</th>
+                    <th>New session</th>
+                    <th>Type</th>
+                    <th>Hours</th>
+                    </thead>
+                    <tbody>
+                        {% set substituteSum = 0 %}
+                        {% for substitution in departmentSubstitutionsList %}
+                            <tr class='substitutions_excellablerow'>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ substitution.scheduleChange.scheduleItem.taughtCourse.nameEnglish  }}</td>
+                                <td>
+                                    {{ substitution.scheduleChange.scheduleItem.taughtCourse.teacher.shortFullname }}
+                                </td>
+                                <td>
+                                    {{ substitution.scheduleChange.newTeacher.shortFullname }}
+                                </td>
+                                <td>
+                                    {{ workloadNames[substitution.teacherWorkItem.teacherWorkSet.workload] }}
+                                </td>
+                                <td>
+                                    {{ substitution.scheduleChange.date|date('d.m.Y') }}
+                                </td>
+                                <td>
+                                    {{ substitution.scheduleChange.newDate|date('d.m.Y') }}
+                                </td>
+                                <td>
+                                    {{ substitution.scheduleChange.session }}
+                                </td>
+                                <td>
+                                    {{ substitution.scheduleChange.newSession }}
+                                </td>
+                                <td>
+                                    {{ substitution.scheduleChange.classType.nameEnglish }}
+                                </td>
+                                <td>
+                                    {{ substitution.scheduleChange.classType.hours }}
+                                    {% set substituteSum = substituteSum + substitution.scheduleChange.classType.hours %}
+                                    {% if viewType==1 %}
+                                        {% if is_granted("ROLE_SPECIALIST") %}
+                                            &nbsp;&nbsp;&nbsp;<a href='javascript:deleteScheduleChange({{ substitution.scheduleChange.id }});'>Delete</a>
+                                        {% endif %}
+                                        <span id='sinfo{{ substitution.scheduleChange.id }}'></span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr id='substitutions_footerrow'>
+                            <td></td>
+                            <td>Total hours</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td>{{ substituteSum }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+        </center>
+    </div>
+    {% set fieldtype='hidden' %}
+    <form id='mainform' name='mainform'>
+        <input type="{{ fieldtype }}" size="10" name='action' id='action' placeholder='action' value=''>
+        <input type="{{ fieldtype }}" size="10" name='div_id' id='div_id' placeholder='div_id' value=''>
+        <input type="{{ fieldtype }}" size="10" name='teacherWorkSetId' id='teacherWorkSetId' placeholder='teacherWorkSetId' value=''>
+        <input type="{{ fieldtype }}" size="10" name='field' id='field' placeholder='field' value=''>
+        <input type="{{ fieldtype }}" size="10" name='value' id='value' placeholder='value' value=''>
+        <input type="{{ fieldtype }}" size="10" name='bigdata' id='bigdata' placeholder='value' value=''>
+    </form>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        var targetParams = [
+        [
+                0, 'A'
+        ],
+        [
+                1, 'B'
+        ],
+        [
+                2, 'C'
+        ],
+        [
+                3, 'D'
+        ],
+        [
+                4, 'E'
+        ],
+        [
+                5, 'F'
+        ],
+        [
+                6, 'G'
+        ],
+        [
+                7, 'H'
+        ],
+        [
+                8, 'I'
+        ],
+        [
+                9, 'J'
+        ],
+        [
+                10, 'K'
+        ],
+        [
+                11, 'L'
+        ],
+        [
+                12, 'M'
+        ],
+        [
+                13, 'N'
+        ],
+        [
+                14, 'O'
+        ],
+        [
+                15, 'P'
+        ],
+        [
+                16, 'Q'
+        ],
+        [
+                17, 'R'
+        ],
+        [
+                18, 'S'
+        ],
+        [
+                19, 'T'
+        ],
+        [
+                20, 'U'
+        ],
+        [
+                21, 'V'
+        ],
+        [
+                22, 'W'
+        ],
+        [
+                23, 'X'
+        ],
+        [
+                24, 'Y'
+        ],
+        [
+                25, 'Z'
+        ],
+        [
+                26, 'AA'
+        ],
+        [
+                27, 'AB'
+        ],
+        [
+                28, 'AC'
+        ]
+        ];
+        function download(templatefile, filename, startrow, month, monthString, year) {
+        special_cells = Array();
+// add special cells
+        $('.excellable').each(function (i, obj) {
+        special_cells.push([$(this).data('excel').cell, $(this).html()]);
+        });
+        special_cells.push([
+                "U3",
+                year.toString() + '-' + (
+                year + 1
+                ).toString()
+        ]);
+        special_cells.push(["U5", monthString]);
+// console.log(special_cells);
+// return;
+        rows = Array();
+// console.log(targetParams.length);
+// console.log('Month: '+month);
+        $('.excellablerow_' + month).each(function () {
+        row = Array();
+        for (i = 0; i < targetParams.length; i ++) { // console.log("Column:"+i);
+        item = targetParams[i];
+// console.log("Value:"+$(this).find("td").eq(item[0]).html());
+        row.push([
+                item[1], $(this).find("td").eq(item[0]).text()
+        ]);
+        }
+        rows.push(row);
+        });
+        footerRow = $('#footerrow_' + month);
+        footerRowData = Array();
+        for (i = 0; i < targetParams.length; i ++) { // console.log(i);
+        item = targetParams[i];
+// console.log($(this).find("td").eq(item[0]).html());
+        footerRowData.push([
+                item[1], footerRow.find("td").eq(item[0]).html()
+        ]);
+        }
+// console.log(footerRowData);
+// return;
+        postData(templatefile, special_cells, filename, startrow, rows, footerRowData, 'FFD3D3D3')
+        }
+
+
+        function downloadSemester(templatefile, filename, startrow, semester, semesterString, year, table_id) {
+        special_cells = Array();
+        $('.excellable').each(function (i, obj) {
+        special_cells.push([$(this).data('excel').cell, $(this).html()]);
+        });
+        special_cells.push([
+                "U3",
+                year.toString() + '-' + (
+                year + 1
+                ).toString()
+        ]);
+        special_cells.push(["U4", semesterString]);
+        rows = Array();
+        $('#' + table_id + ' .semester_excellablerow').each(function () {
+        row = Array();
+        for (i = 0; i < targetParams.length; i ++) { // console.log("Column:"+i);
+        item = targetParams[i];
+        row.push([
+                item[1], $(this).find("td").eq(item[0]).text()
+        ]);
+        }
+        rows.push(row);
+        });
+        footerRow = $('#' + table_id + ' .semester_footerrow');
+        footerRowData = Array();
+        for (i = 0; i < targetParams.length; i ++) { // console.log(i);
+        item = targetParams[i];
+        footerRowData.push([
+                item[1], footerRow.find("td").eq(item[0]).html()
+        ]);
+        }
+        postData(templatefile, special_cells, filename, startrow, rows, footerRowData, 'FFD3D3D3')
+        }
+
+        function downloadSubstitutions(templatefile, filename, startrow, semester, semesterString, year, department) {
+
+        special_cells = Array();
+// add special cells
+
+        special_cells.push([
+                "K3",
+                year.toString() + '-' + (
+                year + 1
+                ).toString()
+        ]);
+        special_cells.push(["K4", semesterString]);
+        special_cells.push(["C3", department]);
+// console.log(special_cells);
+// return;
+        rows = Array();
+// console.log(targetParams.length);
+// console.log('Month: '+month);
+        $('.substitutions_excellablerow').each(function () {
+        row = Array();
+        for (i = 0; i < targetParams.length; i ++) { // console.log("Column:"+i);
+        item = targetParams[i];
+// console.log("Value:"+$(this).find("td").eq(item[0]).html());
+        row.push([
+                item[1], $(this).find("td").eq(item[0]).html()
+        ]);
+        }
+        rows.push(row);
+        });
+        footerRow = $('#substitutions_footerrow');
+        footerRowData = Array();
+        for (i = 3; i < targetParams.length; i ++) { // console.log(i);
+        item = targetParams[i];
+// console.log($(this).find("td").eq(item[0]).html());
+        footerRowData.push([
+                item[1], footerRow.find("td").eq(item[0]).html()
+        ]);
+        }
+// console.log(footerRowData);
+// return;
+// Data to post
+        postData(templatefile, special_cells, filename, startrow, rows, footerRowData, 'FFD3D3D3')
+        }
+
+        function deleteScheduleChange(id) {
+        var r = confirm("Do you really want to delete schedule change? Item id: " + id);
+        if (r) {
+        var fd = new FormData();
+        fd.append('id', id);
+        $.ajax({
+        url: '/faculty/schedulechange/delete',
+                type: 'POST',
+                data: fd,
+                success: function (data) {
+                console.log(data);
+                $("#sinfo" + id).html(data.Result);
+                },
+                error: function (request, status, error) {
+                console.log(request.responseText);
+                $('#sinfo' + id).html(request.responseText);
+                },
+                cache: false,
+                contentType: false,
+                processData: false
+        });
+        }
+        }
+
+        function viewOrder(action, id) {
+        p = "/faculty/teacherworkset/updatefield";
+        $('#action').val(action);
+        $('#teacherWorkSetId').val(id);
+        var inputs = $("#mainform").serialize();
+        console.log(inputs);
+// return;
+        $.ajax({
+        type: "POST",
+                url: p,
+                data: inputs,
+                success: function (msg) {
+                console.log(msg);
+                $('#msg' + id).html(msg);
+                }
+        });
+        }
+
+        function postData(templatefile, special_cells, filename, startrow, rows, footerRowData, lightcolor) {
+        data = {
+        template: templatefile,
+                special_cells: special_cells,
+                filename: filename,
+                startrow: startrow,
+                rows: rows,
+                footerRowData: footerRowData,
+                lightcolor: 'FFD3D3D3'
+        };
+        xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+        console.log('readystate changed');
+        var a;
+        if (xhttp.readyState === 4 && xhttp.status === 200) { // Trick for making downloadable link
+        a = document.createElement('a');
+        a.href = window.URL.createObjectURL(xhttp.response);
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        }
+        };
+        xhttp.open("POST", '/interop/exporter/postdata');
+        xhttp.setRequestHeader("Content-Type", "application/json");
+        xhttp.responseType = 'blob';
+        xhttp.send(JSON.stringify(data));
+        }
+    </script>
+{% endblock %}

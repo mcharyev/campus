@@ -1,0 +1,58 @@
+{% extends 'hr.html.twig' %}
+
+{% block moduletitle %}Employee Form{% endblock %}
+{% block main %}
+    <div style="width:90%;margin:auto;"><h3>Employee Form</h3></div>
+    <div style="width:90%;margin:auto;">
+        {% form_theme form 'bootstrap_4_horizontal_layout.html.twig' %}
+        {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="button" class="add-position-widget" 
+                data-list-selector="#employee_form_positions">Add work position</button>
+        <button type="button" class="remove-position-widget" 
+                data-list-selector="#employee_form_positions">Remove work position</button>
+        <button type="button" class="add-relative-widget" 
+                data-list-selector="#employee_form_relatives">Add relative</button>
+        <button type="button" class="remove-relative-widget" 
+                data-list-selector="#employee_form_relatives">Remove relative</button>
+        <button type="submit" class="btn btn-primary">Create</button>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+            jQuery('.add-position-widget').click(function (e) {
+                var list = jQuery(jQuery(this).attr('data-list-selector'));
+                var counter = list.data('widget-counter') || list.children().length;
+                var newWidget = list.attr('data-prototype');
+                newWidget = newWidget.replace(/__name__/g, counter);
+                counter++;
+                list.data('widget-counter', counter);
+                var newElem = jQuery('<div></div>').html(newWidget);
+                newElem.appendTo(list);
+            });
+            jQuery('.remove-position-widget').click(function (e) {
+                var list = jQuery(jQuery(this).attr('data-list-selector'));
+                var counter = list.data('widget-counter') || list.children().length;
+                $('#employee_form_positions div:nth-child(' + counter + ')').remove();
+            });
+            jQuery('.add-relative-widget').click(function (e) {
+                var list = jQuery(jQuery(this).attr('data-list-selector'));
+                var counter = list.data('widget-counter') || list.children().length;
+                var newWidget = list.attr('data-prototype');
+                newWidget = newWidget.replace(/__name__/g, counter);
+                counter++;
+                list.data('widget-counter', counter);
+                var newElem = jQuery('<div></div>').html(newWidget);
+                newElem.appendTo(list);
+            });
+            jQuery('.remove-relative-widget').click(function (e) {
+                var list = jQuery(jQuery(this).attr('data-list-selector'));
+                var counter = list.data('widget-counter') || list.children().length;
+                $('#employee_form_relatives div:nth-child(' + counter + ')').remove();
+            });
+        });
+    </script>
+{% endblock %}{# empty Twig template #}
+{# empty Twig template #}

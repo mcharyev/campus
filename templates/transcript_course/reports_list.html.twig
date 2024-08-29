@@ -1,0 +1,34 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .small {font-size:12px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+        .bold {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Grades{% endblock %}
+{% block main %}
+    <h4>{{ report_title }}</h4>
+    <p>
+    <ul>
+        <li><a href='/grading/transcriptcourse/report/{{ year }}/{{ semester }}'>All Grades</a></li>
+        <li><a href='/grading/transcriptcourse/ungraded/midterm/{{ year }}/{{ semester }}'>Ungraded midterm</a>
+    </ul>
+</p>
+{% set fieldtype='hidden' %}
+<form id='mainform' name='mainform'>
+    <input type="{{ fieldtype }}" size=10 name='action' id='action' placeholder='action' value=''>
+    <input type="{{ fieldtype }}" size=10 name='div_id' id='div_id' placeholder='div_id' value=''>
+</form>
+
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        var selectedItems = Array();
+        $(document).ready(function () {
+            
+        });
+    </script>
+{% endblock %}

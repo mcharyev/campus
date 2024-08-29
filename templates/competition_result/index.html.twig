@@ -1,0 +1,149 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Competition Result{% endblock %}
+{% block customcss %}
+    <style>
+        .jtable-dialog-form input[type="text"]
+        {
+            min-width: 200px;
+        }
+
+        .jtable-dialog-form {
+            display: block;
+            width: 700px;
+            -moz-column-gap:40px;
+            -webkit-column-gap:40px;
+            column-gap:40px;
+            -moz-column-count:2;
+            -webkit-column-count:2;
+            column-count:2;
+        }
+    </style>
+{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='person'>Person</option>
+                <option value='data'>Data</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form> <a href="/faculty/competitionresult/new">New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            row_count = 0;
+            $('#main').jtable({
+                title: 'Competition Results',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'competition_result.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/faculty/competitionresult/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(jtParams.jtSorting);
+                                        $dfd.resolve(data);
+                                        row_count = 0;
+                                    },
+                                    error: function (data) {
+                                        //console.log(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/faculty/competitionresult/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'No',
+                            create: false,
+                            edit: false,
+                            width: '3%'
+                        },
+                        id: {
+                            title: 'ID',
+                            width: '3%',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            list: true
+                        },
+                        person: {
+                            title: 'Person',
+                            type: 'textarea',
+                            width: '5%',
+                            defaultValue: '',
+                            list: true
+                        },
+                       competition_id: {
+                            title: 'Competition',
+                            options: '/valuepairs/competition/id/name_turkmen/id ASC',
+                            width: '20%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        actions: {
+                            title: 'Actions',
+                            sorting: false,
+                            list: true,
+                            edit: false,
+                            create: false,
+                            display: function (data)
+                            {
+                                info = "<a href='/faculty/competitionresult/edit/" + data.record.id + "'>Edit</a> | ";
+                                return info;
+                            }
+
+                        }
+        {% if is_granted('ROLE_ADMIN') %}
+        {% endif %}
+                    }
+                });
+                $('#main').jtable('load');
+            });
+            function search()
+            {
+                window.location.href = "/faculty/competitionresult/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+    </script>
+{% endblock %}

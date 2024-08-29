@@ -1,0 +1,370 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %} ERDU {% endblock %}
+{% block main %}
+    <h3>Elektron resminama dolandyryş ulgamy - {{ page_title }}</h3>
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Gözle:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='title'>Ady</option>
+                <option value='origin_description'>Hatyň beýany</option>
+                <option value='date_sent'>Iberilen senesi</option>
+                <option value='number_sent'>Iberilen belgisi</option>
+                <option value='date_received'>Gowşurylan senesi</option>
+                <option value='number_received'>Gowşurylan belgisi</option>
+                <option value='filing_category'>Arhiw faýly</option>
+                <option value='tags'>Bellikler</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Gözle' onclick='search();'>&nbsp;&nbsp;&nbsp;&nbsp;
+            <select name='cbx_status' id='cbx_status'>
+                <option value=''>Ýagdaýyna görä</option>
+                <option value='1'>Umumy</option>
+                <option value='2'>Täze</option>
+                <option value='3'>Talap edildi</option>
+                <option value='4'>Işlenýär</option>
+                <option value='5'>Arhiw</option>
+                <option value='99'>Gizlenen</option>
+                <option value='100'>Hemmesi</option>
+            </select>&nbsp;&nbsp;
+            <select name='cbx_document_type' id='cbx_document_type'>
+                <option value=''>Görnüşine görä</option>
+                <option value='1'>Umumy</option>
+                <option value='2'>Arza</option>
+                <option value='3'>Ministrlik buýrugy</option>
+                <option value='4'>Tender</option>
+                <option value='5'>Şertnama</option>
+                <option value='99'>Inwoýs</option>
+                <option value='100'>Başga</option>
+            </select>&nbsp;&nbsp;
+        </div>
+    </form> <a href="/edms/electronic_document/new/{{ entry_type }}">Täze döret</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+        row_count = 0;
+        $('#main').jtable({
+        title: '{{ page_title }}',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'id DESC',
+                actions: {
+                listAction: function (postData, jtParams) {
+                return $.Deferred(function ($dfd) {
+                $.ajax({
+                url: '/edms/electronic_document/list/' + '{{ entry_type|raw }}' + '/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                            type: 'POST',
+                            dataType: 'json',
+                            data: postData,
+                            success: function (data) {
+                            console.log(jtParams.jtSorting);
+                            $dfd.resolve(data);
+                            row_count = 0;
+                            },
+                            error: function (request, status, error) {
+                            console.log(request.responseText);
+                            $dfd.reject();
+                            }
+                    });
+                    });
+                    },
+                            deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                            $.ajax({
+                            url: '/edms/electronic_document/{{ entry_type }}/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                    console.log(data);
+                                    $dfd.resolve(data);
+                                    },
+                                    error: function (request, status, error) {
+                                    console.log(request.responseText);
+                                    $dfd.reject();
+                                    }
+                            });
+                            });
+                            }
+                    },
+                    fields: {
+                    row_number: {
+                    title: 'No',
+                            create: false,
+                            edit: false,
+                            width: '3%'
+                    },
+                            id: {
+                            title: 'ID',
+                                    width: '3%',
+                                    key: true,
+                                    create: false,
+                                    edit: false,
+                                    list: true
+                            },
+                            title: {
+                            title: 'Ady',
+                                    type: 'text',
+                                    width: '7%',
+                                    list: true
+                            },
+                            document_type: {
+                            title: 'Resm. görnüşi',
+                                    options:{{ document_types_array|raw }},
+                                    width: '7%',
+                                    list: true
+                            },
+                            origin_description: {
+                            title: 'Hatyň beýany',
+                                    type: 'text',
+                                    width: '10%',
+                                    list: true
+                            },
+                            date_sent: {
+                            title: 'Iberilen senesi',
+                                    type: 'date',
+                                    displayFormat: 'dd.mm.yy',
+                                    width: '5%',
+                                    list: true
+                            },
+                            number_sent: {
+                            title: 'Iberilen belgisi',
+                                    type: 'text',
+                                    width: '7%',
+                                    list: true
+                            },
+                            destination_description: {
+                            title: 'Iberilen ýeriň beýany',
+                                    type: 'text',
+                                    width: '10%',
+                                    list: true
+                            },
+                            date_received: {
+                            title: 'Giriş senesi',
+                                    type: 'date',
+                                    displayFormat: 'dd.mm.yy',
+                                    width: '5%',
+                                    list: true
+                            },
+                            number_received: {
+                            title: 'Giriş belgisi',
+                                    type: 'text',
+                                    width: '5%',
+                                    list: true
+                            },
+                            filing_category: {
+                            title: 'Arhiw faýly',
+                                    type: 'text',
+                                    width: '5%',
+                                    list: true
+                            },
+                            status: {
+                            title: 'Ýagdaýy',
+                                    options:{{ status_types_array|raw }},
+                                    width: '5%',
+                                    list: true
+                            },
+                            attached_files: {
+                            title: 'Faýllar',
+                                    sorting: false,
+                                    list: true,
+                                    edit: false,
+                                    create: false,
+                                    display: function (data)
+                                    {
+                                    if (data.record.attached_files)
+                                    {
+                                    info = '';
+                                    arrFiles = data.record.attached_files.split(",");
+                                    for (z = 0; z < arrFiles.length; z++)
+                                    {
+                                    info += "<a href=\"javascript:downloadfile('" + data.record.id + "','" + arrFiles[z] + "');\">" + arrFiles[z] + "</a><br>";
+                                    }
+                                    info += "<div id='drop" + data.record.id + "'></div>";
+                                    } else
+                                    {
+                                    info = "No file <div id='drop" + data.record.id + "'></div>";
+                                    }
+                                    return info;
+                                    }
+
+                            },
+                            actions: {
+                            title: 'Amallar',
+                                    sorting: false,
+                                    list: true,
+                                    edit: false,
+                                    create: false,
+                                    width: '5%',
+                                    display: function (data)
+                                    {
+                                    info = "<a href='/edms/electronic_document/edit/" + data.record.entry_type + "/" + data.record.id + "'>Edit</a>";
+                                    //info += " | <a href=\"javascript:deletefile(" + data.record.id + ");\">Delete File</a>";
+                                    return info;
+                                    }
+
+                            }
+                    },
+                    recordsLoaded: function ()
+                    {
+                    ['dragenter', 'dragover', 'dragleave'].forEach(eventName => {
+                    $('tr.jtable-data-row').on(eventName, preventDefaults, false);
+                    })
+
+                            $('tr.jtable-data-row').on('drop', function (e) { //use on if jQuery 1.7+
+                    fileDropped(e, $(this).data('record-key'));
+                    });
+                    },
+                    formCreated: function (e, data) {
+                    if (data.record)
+                            listfile(data.record.id);
+                    }
+            });
+            $('#main').jtable('load');
+            $('#cbx_status').on('change', function (e) {
+            if ($('#cbx_status').val() != '')
+            {
+            window.location.href = "/edms/electronic_document/search/{{ entry_type }}/status/" + $('#cbx_status').val();
+            }
+            });
+            $('#cbx_document_type').on('change', function (e) {
+            if ($('#cbx_document_type').val() != '')
+            {
+            window.location.href = "/edms/electronic_document/search/{{ entry_type }}/document_type/" + $('#cbx_document_type').val();
+            }
+            });
+            });
+            function preventDefaults(e) {
+            e.preventDefault()
+                    e.stopPropagation()
+            }
+
+            function fileDropped(e, id) {
+            //console.log('working');
+            $("#drop" + id).html('Loading...');
+            e.preventDefault(); //prevent form from submitting
+            //return;
+            //console.log(e.originalEvent.dataTransfer.files);
+            //return;
+            var fd = new FormData();
+            fd.append('id', id);
+            for (i = 0; i < e.originalEvent.dataTransfer.files.length; i++)
+            {
+            fd.append('file[]', e.originalEvent.dataTransfer.files[i]);
+            console.log('file' + i);
+            }
+            //return;
+            //file0 = e.originalEvent.dataTransfer.files[0];
+            $.ajax({
+            url: '/edms/electronic_document/{{ entry_type }}/uploadfile',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                    $("#drop" + id).html(data);
+                    },
+                    error: function (request, status, error) {
+                    //console.log(request.responseText);
+                    $("#drop" + id).html(request.responseText);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+            });
+            }
+
+            function uploadfile(id)
+            {
+            //console.log('working');
+            //return;
+            var fd = new FormData($("#fileform")[0]);
+            fd.append('id', id);
+            $.ajax({
+            url: '/edms/electronic_document/{{ entry_type }}/uploadfile',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                    //console.log(data);
+                    $("#filelist").html(data);
+                    },
+                    error: function (request, status, error) {
+                    //console.log(request.responseText);
+                    $('#filelist').html(request.responseText);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+            });
+            }
+
+            function listfile(id)
+            {
+            var fd = new FormData();
+            fd.append('id', id);
+            $.ajax({
+            url: '/edms/electronic_document/{{ entry_type }}/listfile',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                    $('#filelist').html(data);
+                    },
+                    error: function (request, status, error) {
+                    $('#filelist').html(request.responseText);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+            });
+            }
+
+            function deletefile(id)
+            {
+            var r = confirm("Delete file?");
+            if (r)
+            {
+            var fd = new FormData();
+            fd.append('id', id);
+            //console.log(fd);
+            $.ajax({
+            url: '/edms/electronic_document/deletefile',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                    //console.log(data);
+                    $("#drop" + id).html(data);
+                    },
+                    error: function (request, status, error) {
+                    $("#drop" + id).html(request.responseText);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+            });
+            }
+            }
+
+            function downloadfile(id, filename)
+            {
+            window.location.href = '/edms/electronic_document/downloadfile/' + id + '/' + filename;
+            }
+
+            function search()
+            {
+            window.location.href = "/edms/electronic_document/search/{{ entry_type }}/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+            function showerror(str)
+            {
+            $('#error').html(str);
+            }
+    </script>
+{% endblock %}

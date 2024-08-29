@@ -1,0 +1,78 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Enrolled Student Form{% endblock %}
+{% block main %}
+    <div style="width:90%;margin:auto;"><h3>Enrolled Student Form</h3></div>
+    <div style="width:90%;margin:auto;">
+        {% form_theme form 'bootstrap_4_horizontal_layout.html.twig' %}
+        {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="button" class="add-another-collection-positions" 
+                data-list-selector="#enrolled_student_form_positions">Add work position</button>
+        <!--<button type="button" class="remove-collection-positions" 
+                data-list-selector="#enrolled_student_form_positions">Remove work position</button>-->
+        <button type="button" class="add-another-collection-relatives" 
+                data-list-selector="#enrolled_student_form_relatives">Add relatives</button>
+        <!--<button type="button" class="remove-collection-relatives" 
+                data-list-selector="#enrolled_student_form_relatives">Remove relative</button>-->
+        <button type="submit" class="btn btn-primary">Create</button>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+            jQuery('.add-another-collection-positions').click(function (e) {
+                var list = jQuery(jQuery(this).attr('data-list-selector'));
+                // Try to find the counter of the list or use the length of the list
+                var counter = list.data('positions-widget-counter') || list.children().length;
+
+                // grab the prototype template
+                var newWidget = list.attr('data-prototype');
+                // replace the "__name__" used in the id and name of the prototype
+                // with a number that's unique to your emails
+                // end name attribute looks like name="contact[emails][2]"
+                newWidget = newWidget.replace(/__name__/g, counter);
+                // Increase the counter
+                counter++;
+                // And store it, the length cannot be used if deleting widgets is allowed
+                list.data('positions-widget-counter', counter);
+
+                // create a new list element and add it to the list
+                var newElem = jQuery('<div></div>').html(newWidget);
+                newElem.appendTo(list);
+            });
+            jQuery('.remove-collection-positions').click(function (e) {
+                var list = jQuery(jQuery(this).attr('data-list-selector'));
+                var counter = list.data('positions-widget-counter') || list.children().length;
+                $('#enrolled_student_form_positions div:nth-child(' + counter + ')').remove();
+            });
+            
+            jQuery('.add-another-collection-relatives').click(function (e) {
+                var list = jQuery(jQuery(this).attr('data-list-selector'));
+                // Try to find the counter of the list or use the length of the list
+                var counter = list.data('relatives-widget-counter') || list.children().length;
+
+                // grab the prototype template
+                var newWidget = list.attr('data-prototype');
+                // replace the "__name__" used in the id and name of the prototype
+                // with a number that's unique to your emails
+                // end name attribute looks like name="contact[emails][2]"
+                newWidget = newWidget.replace(/__name__/g, counter);
+                // Increase the counter
+                counter++;
+                // And store it, the length cannot be used if deleting widgets is allowed
+                list.data('relatives-widget-counter', counter);
+
+                // create a new list element and add it to the list
+                var newElem = jQuery('<div></div>').html(newWidget);
+                newElem.appendTo(list);
+            });
+            jQuery('.remove-collection-relatives').click(function (e) {
+                var list = jQuery(jQuery(this).attr('data-list-selector'));
+                var counter = list.data('relatives-widget-counter') || list.children().length;
+                $('#enrolled_student_form_relatives div:nth-child(' + counter + ')').remove();
+            });
+        });
+    </script>
+{% endblock %}

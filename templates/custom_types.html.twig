@@ -1,0 +1,43 @@
+{# empty Twig template #}
+{% block work_position_row %}
+    <div class="form-group">
+        <div class="form-row">
+            {% for child in form.children if not child.rendered %}
+                <div class="col">
+                    {{ form_label(child) }}
+                    {{ form_widget(child) }}
+                    {{ form_errors(child) }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+{% block relative_row %}
+    <div class="form-group">
+        <div class="form-row">
+            {% for child in form.children if not child.rendered %}
+                <div class="col">
+                    {{ form_label(child) }}
+                    {{ form_widget(child) }}
+                    {{ form_errors(child) }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+{% block course_count_row %}
+    <div class="form-group">
+        <div class="form-row">
+            {% for child in form.children if not child.rendered %}
+                {{ form_label(child) }}
+                {{ form_widget(child) }}
+                {{ form_errors(child) }}
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+{% block student_groups_row %}
+    <div class="form-group row">
+        <div class="col-sm-2"></div><div class="col-sm-10"><div id="items_list"></div></div>
+    </div>
+{% endblock %}

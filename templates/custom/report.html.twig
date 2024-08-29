@@ -1,0 +1,40 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+        .bold {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Attendance{% endblock %}
+{% block main %}
+    <h4>Custom</h4>
+    {% set itemNumber = 0 %}
+    <table class="table table-bordered table-sm table-compact table-striped">
+        <tr><th>#</th><th>ID</th><th>Teacher</th><th>Status</th><th>Action</th><th>Day</th><th>Session</th><th>Schedule Id</th>
+            <th>Period</th><th>Student Group</th><th>Type</th><th>Attendance</th></tr>
+                    {% set itemNumber = itemNumber + 1 %}
+            {% for item in scheduleItems %}
+            <tr>
+                <td>{{ itemNumber }}</td>
+                <td>{{ item.item.id }}</td>
+                <td>{{ item.item.teacher.shortfullname }}</td>
+                <td>{{ item.status }}</td>
+                <td><a href='/custom/deletescheduleitem/{{ item.item.id }}' target="_blank">Delete</a></td>
+                <td>{{ item.item.day }}</td>
+                <td>{{ item.item.session }}</td>
+                <td>{{ item.item.schedule.id }}</td>
+                <td>{{ item.item.startdate|date('Y-m-d') }} - {{ item.item.enddate|date('Y-m-d') }}</td>
+                <td>{{ item.item.studentGroups }}</td>
+                <td>{{ item.item.classtype.nameEnglish }}</td>
+                <td>{{ item.item.taughtcourse.nameEnglish }}</td>
+                <td><a href='/faculty/attendancejournal/course/{{ item.item.taughtcourse.id }}' target="_blank">Attendance</a></td>
+            </tr>
+            {% endfor %}
+    </table>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+    </script>
+{% endblock %}

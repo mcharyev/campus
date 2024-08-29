@@ -1,0 +1,29 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+    </style>
+{% endblock %}
+{% block moduletitle %}Analytics{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div style="margin:auto;">
+        <h3>Analytics</h3>
+        <a class="btn btn-outline-success" href='/faculty/analytics/major_count'>Major counts</a> 
+        <a class="btn btn-outline-success" href='/faculty/analytics/group_count'>Group counts</a> 
+        <a class="btn btn-outline-success" href='/faculty/analytics/faculty_count'>Faculty counts</a>
+        <a class="btn btn-outline-success" href='/faculty/analytics/alumni'>Alumni</a>
+        {% if is_granted("ROLE_SPECIALIST") %}
+            <a class="btn btn-outline-success" href='/faculty/analytics/velayat_count'>Velayat counts</a>
+            <a class="btn btn-outline-success" href='/faculty/analytics/age_count'>Age counts</a>
+            <a class="btn btn-outline-success" href='/faculty/analytics/hostel_count'>Hostel counts</a>
+            <!--<a class="btn btn-outline-success" href='workloads.php?action=department_workloads_all'>Department workloads</a>-->
+        {% endif %}<p>
+            {{ analytics_content|raw }}
+    </div>
+{% endblock %}
+{% block customjs %}
+{% endblock %}

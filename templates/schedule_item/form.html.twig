@@ -1,0 +1,70 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Schedule Item Form{% endblock %}
+{% block main %}
+    <div style="width:90%;margin:auto;"><h3>Schedule Item Form</h3></div>
+    <div style="width:90%;margin:auto;">
+        {% form_theme form 'bootstrap_4_horizontal_layout.html.twig' %}
+        {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="submit" class="btn btn-primary">Create</button>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+            $('#schedule_item_form_teacher').on('change', function (e) {
+                updateTaughtCoursesBox();
+            });
+            
+            $('#schedule_item_form_classRoombox').on('change', function (e) {
+                updateRoom();
+            });
+            $('#schedule_item_form_taughtCourse').on('change', function (e) {
+                updateCourse();
+            });
+        });
+        
+        function updateTaughtCoursesBox()
+        {
+            var year = $('#schedule_item_form_year').val();
+            var semester = $('#schedule_item_form_semester').val();
+            var teacher = $('#schedule_item_form_teacher').val();
+            var strUrl = "/faculty/taughtcourse/jsonlistitems/" + teacher + "/" + year+ "/" + semester;
+            var cbxTaughtCourses = $('#schedule_item_form_taughtCourse');
+            updateSelectBox(cbxTaughtCourses, strUrl, 'taughtcourse');
+        }
+        
+        function updateSelectBox(obj, strUrl, action)
+        {
+            obj.empty();
+            $.ajax({
+                url: strUrl,
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $.each(data, function (i, item) {
+                        obj.append("<option value='" + data[i].id + "'>" + data[i].value + "</option>");
+                    });
+                },
+                error: function (data) {}
+            });
+        }
+        
+        function updateRoom()
+        {
+            $('#schedule_item_form_rooms').val($("#schedule_item_form_classRoombox option:selected").val());
+        }
+        function updateCourse()
+        {
+            var str = $("#schedule_item_form_taughtCourse option:selected").text();
+            var arr = str.split(" - ");
+            if (arr.length > 1)
+            {
+                $('#schedule_item_form_course_name').val(arr[1]);
+                $('#schedule_item_form_studentGroups').val(arr[2]);
+            }
+        }
+    </script>
+{% endblock %}{# empty Twig template #}

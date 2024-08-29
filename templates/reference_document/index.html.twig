@@ -1,0 +1,289 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %} Reference Documents{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='title'>Title</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form> <a href="/reference_document/new">New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            row_count = 0;
+            $('#main').jtable({
+                title: 'Reference Documents',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'id DESC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/reference_document/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(jtParams.jtSorting);
+                                        $dfd.resolve(data);
+                                        row_count = 0;
+                                    },
+                                    error: function (data) {
+                                        //console.log(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/reference_document/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'No',
+                            create: false,
+                            edit: false,
+                            width: '3%'
+                        },
+                        id: {
+                            title: 'ID',
+                            width: '3%',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            list: true
+                        },
+                        title: {
+                            title: 'Title',
+                            type: 'text',
+                            width: '20%',
+                            list: true
+                        },
+                        date: {
+                            title: 'Date',
+                            type: 'date',
+                            displayFormat: 'dd.mm.yy',
+                            width: '5%',
+                            list: true
+                        },
+                        type: {
+                            title: 'Type',
+                            options: {'0': 'Başga', '10': 'Türkmenistanyň Kanuny', '20': 'Düzgünnama', '30': 'Tertip', '40': 'Buýruk', '50': 'Gözükdiriji', '60': 'Içerki düzgünnama', '70': 'Içerki buýruk', '80': 'Döwlet standarty'},
+                            width: '5%',
+                            list: true
+                        },
+                        authority: {
+                            title: 'Authority',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        note: {
+                            title: 'Note',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        file_link: {
+                            title: 'Link',
+                            sorting: false,
+                            list: true,
+                            edit: false,
+                            create: false,
+                            display: function (data)
+                            {
+                                if (data.record.link)
+                                {
+                                    info = "<a href=\"javascript:downloadfile(" + data.record.id + ");\">"+data.record.link+"</a> <div id='drop" + data.record.id + "'></div>";
+                                } else
+                                {
+                                    info = "No file <div id='drop" + data.record.id + "'></div>";
+                                }
+                                return info;
+                            }
+
+                        },
+                        actions: {
+                            title: 'Actions',
+                            sorting: false,
+                            list: true,
+                            edit: false,
+                            create: false,
+                            width: '5%',
+                            display: function (data)
+                            {
+                                info = "<a href='/reference_document/edit/" + data.record.id + "'>Edit</a>";
+                                info += " | <a href=\"javascript:deletefile(" + data.record.id + ");\">Delete File</a>";
+                                return info;
+                            }
+
+                        }
+                    },
+                    recordsLoaded: function ()
+                    {
+                        ['dragenter', 'dragover', 'dragleave'].forEach(eventName => {
+                            $('tr.jtable-data-row').on(eventName, preventDefaults, false);
+                        })
+
+                        $('tr.jtable-data-row').on('drop', function (e) { //use on if jQuery 1.7+
+                            fileDropped(e, $(this).data('record-key'));
+                        });
+                    },
+                    formCreated: function (e, data) {
+                        if (data.record)
+                            listfile(data.record.id);
+                    }
+                });
+
+                $('#main').jtable('load');
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault()
+                e.stopPropagation()
+            }
+
+            function fileDropped(e, id) {
+                //console.log('working');
+                $("#drop" + id).html('Loading...');
+                e.preventDefault();  //prevent form from submitting
+                //return;
+                //console.log(e.originalEvent.dataTransfer.files);
+                file0 = e.originalEvent.dataTransfer.files[0];
+                //return;
+                var fd = new FormData();
+                fd.append('id', id);
+                fd.append('file', file0);
+                $.ajax({
+                    url: '/reference_document/uploadfile',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                        $("#drop" + id).html(data);
+                    },
+                    error: function (request, status, error) {
+                        //console.log(request.responseText);
+                        $("#drop" + id).html(request.responseText);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+            function uploadfile(id)
+            {
+                //console.log('working');
+                //return;
+                var fd = new FormData($("#fileform")[0]);
+                fd.append('id', id);
+                $.ajax({
+                    url: '/reference_document/uploadfile',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                        //console.log(data);
+                        $("#filelist").html(data);
+                    },
+                    error: function (request, status, error) {
+                        //console.log(request.responseText);
+                        $('#filelist').html(request.responseText);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+            function listfile(id)
+            {
+                var fd = new FormData();
+                fd.append('id', id);
+                $.ajax({
+                    url: '/reference_document/listfile',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                        $('#filelist').html(data);
+                    },
+                    error: function (request, status, error) {
+                        $('#filelist').html(request.responseText);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+            function deletefile(id)
+            {
+                var r = confirm("Delete file?");
+                if (r)
+                {
+                    var fd = new FormData();
+                    fd.append('id', id);
+                    //console.log(fd);
+                    $.ajax({
+                        url: '/reference_document/deletefile',
+                        type: 'POST',
+                        data: fd,
+                        success: function (data) {
+                            //console.log(data);
+                            $("#drop" + id).html(data);
+                        },
+                        error: function (request, status, error) {
+                            $("#drop" + id).html(request.responseText);
+                        },
+                        cache: false,
+                        contentType: false,
+                        processData: false
+                    });
+                }
+            }
+
+            function downloadfile(id)
+            {
+                window.location.href = '/reference_document/downloadfile/' + id;
+            }
+
+            function search()
+            {
+                window.location.href = "/reference_document/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+    </script>
+{% endblock %}

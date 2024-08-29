@@ -1,0 +1,156 @@
+{% extends 'hr.html.twig' %}
+
+{% block moduletitle %}Movements{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='system_id'>System Id</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form> <a href="/hr/movement/new">New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            row_count = 0;
+            $('#main').jtable({
+                title: 'Movements',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'movement.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/hr/movement/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(jtParams.jtSorting);
+                                        $dfd.resolve(data);
+                                        row_count = 0;
+                                    },
+                                    error: function (data) {
+                                        //console.log(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/hr/movement/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'No',
+                            create: false,
+                            edit: false,
+                            width: '3%'
+                        },
+                        id: {
+                            title: 'ID',
+                            width: '3%',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            list: true
+                        },
+                        employee_number: {
+                            title: 'Işgär',
+                            options: '/valuepairs/employee/id/lastname/id ASC',
+                            width: '10%',
+                            list: true
+                        },
+                        movement_type: {
+                            title: 'Görnüş',
+                            options: {0: 'Giriş', 1: 'Çykyş'},
+                            width: '5%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        movement_day: {
+                            title: 'Güni',
+                            width: '5%',
+                            sorting: true,
+                            list: true,
+                            create: false,
+                            edit: false
+                        },
+                        movement_time: {
+                            title: 'Sagady',
+                            width: '5%',
+                            sorting: true,
+                            list: true,
+                            create: false,
+                            edit: false
+                        },
+                        author_id: {
+                            title: 'Girizen',
+                            options: '/valuepairs/user/id/username/id ASC',
+                            width: '10%',
+                            list: true
+                        },
+                        date_updated: {
+                            title: 'Girizilen wagty',
+                            type: 'date',
+                            width: '5%',
+                            displayFormat: 'dd-mm-yy',
+                            list: true
+                        },
+                        actions: {
+                            title: 'Actions',
+                            sorting: false,
+                            list: true,
+                            edit: false,
+                            create: false,
+                            width: '10%',
+                            display: function (data)
+                            {
+                                info = "<a href='/hr/movement/edit/" + data.record.id + "'>Edit</a>";
+                                return info;
+                            }
+
+                        }
+                    }
+                });
+                $('#main').jtable('load');
+            });
+            function search()
+            {
+                window.location.href = "/hr/movement/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+    </script>
+{% endblock %}

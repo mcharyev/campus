@@ -1,0 +1,91 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Faculty{% endblock %}
+{% block customcss %}
+<style>
+.jtable-dialog-form input[type="text"]
+{
+   min-width: 200px;
+}
+
+.jtable-dialog-form {
+    display: block;
+    width: 700px;
+    -moz-column-gap:40px;
+    -webkit-column-gap:40px;
+    column-gap:40px;
+    -moz-column-count:2;
+    -webkit-column-count:2;
+    column-count:2;
+}
+</style>
+{% endblock %}
+{% block main %}
+<div id='error'>
+</div>
+<div id='main'>
+</div>
+{% endblock %}
+{% block customjs %}
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#main').jtable({
+            title: 'Faculty',
+			pageSize: 35,
+			paging: true,
+			sorting: true,
+			startIndex: 0,
+			defaultSorting: 'faculty.system_id ASC',
+            actions: {
+					listAction: function (postData, jtParams) {
+						return $.Deferred(function ($dfd) {
+							$.ajax({
+								url: {{ list_action|raw }},
+								type: 'POST',
+								dataType: 'json',
+								data: postData,
+								success: function (data) {
+									$dfd.resolve(data);
+								},
+								error: function (data) {
+									//console.log(data.responseText);
+									$dfd.reject();
+								}
+							});
+						});
+					},
+					createAction: '/faculty/faculty/create',
+					updateAction: '/faculty/faculty/update',
+					deleteAction: '/faculty/faculty/delete'
+            },
+            fields: {
+							row_number: {
+										title: 'No',
+										create: false,
+										edit: false,
+										width: '3%'
+									},
+								id: {
+						key: true,
+						create: false,
+						edit: false,
+						list: false,
+				},
+				name_english: {
+					title: 'Name English',
+					type: 'textarea',
+                    width: '10%',
+					list: true
+				}
+						}
+        });
+		
+		$('#main').jtable('load');
+    });
+
+function showerror(str)
+{
+	$('#error').html(str);
+}
+</script>
+{% endblock %}

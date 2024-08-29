@@ -1,0 +1,140 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Announcements{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='title'>title</option>
+                <option value='content'>content</option>
+                <option value='category'>category</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form> <a href="/faculty/announcement/new">New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            row_count = 0;
+            $('#main').jtable({
+                title: 'Announcements',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'announcement.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/faculty/announcement/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(jtParams.jtSorting);
+                                        $dfd.resolve(data);
+                                        row_count = 0;
+                                    },
+                                    error: function (data) {
+                                        //console.log(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/faculty/announcement/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'No',
+                            create: false,
+                            edit: false,
+                            width: '3%'
+                        },
+                        id: {
+                            title: 'ID',
+                            width: '3%',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            list: true
+                        },
+                        Title: {
+                            title: 'Title',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        content: {
+                            title: 'Content',
+                            type: 'textarea',
+                            width: '5%',
+                            list: true
+                        },
+                        author_id: {
+                            title: 'Author',
+                            options: '/valuepairs/user/id/username/id ASC',
+                            width: '5%',
+                            list: true
+                        },
+                        date_expiry: {
+                            title: 'Expiry date',
+                            type: 'date',
+                            displayFormat: 'dd.mm.yy',
+                            width: '5%'
+                        },
+                        actions: {
+                            title: 'Actions',
+                            sorting: false,
+                            list: true,
+                            edit: false,
+                            create: false,
+                            width: '10%',
+                            display: function (data)
+                            {
+                                info = "<a href='/faculty/announcement/edit/" + data.record.id + "'>Edit</a>";
+                                return info;
+                            }
+
+                        }
+                    }
+                });
+                $('#main').jtable('load');
+            });
+            function search()
+            {
+                window.location.href = "/faculty/announcement/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+    </script>
+{% endblock %}

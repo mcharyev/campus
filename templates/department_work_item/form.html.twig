@@ -1,0 +1,105 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Department Work Item Form{% endblock %}
+{% block main %}
+    <div style="width:90%;margin:auto;"><h3>Department Work Item Form</h3></div>
+    <div style="width:90%;margin:auto;">
+        {% form_theme form 'bootstrap_4_horizontal_layout.html.twig' %}
+        {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="submit" class="btn btn-primary">Create / Update</button>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+            populate_items($('#department_work_item_form_student_groups').val());
+            autocompleting();
+        });
+        var items = Array();
+
+        function autocompleting()
+        {
+            //console.log('autocomplete applied');
+            $("#department_work_item_form_student_groups_select").autocomplete({
+                minLength: 3,
+                source: function (request, response) {
+                    $.ajax({
+                        url: "/faculty/groupcourse/jsonlist/" + $('#department_work_item_form_year').val() + "/" + $('#department_work_item_form_semester').val() + "/" + request.term,
+                        dataType: "json",
+                        success: function (data) {
+                            response(data);
+                        }
+                    });
+                },
+                focus: function (event, ui) {
+                    //$( "#department_work_item_formstudent_groups_select" ).val( ui.item.value );
+                    //console.log(ui.item.value);
+                    return false;
+                },
+                select: function (event, ui) {
+                    add_item(ui.item.id, ui.item.value);
+
+                    return false;
+                }
+            })
+                    .autocomplete("instance")._renderItem = function (ul, item) {
+                return $("<li>")
+                        .append("<div style='50px; margin-top:5px;'>" + item.value + "</div>")
+                        .appendTo(ul);
+            };
+        }
+
+        function add_item(id, name)
+        {
+            items.push([id, name]);
+            refresh_items();
+        }
+
+        function remove_item(index)
+        {
+            items.splice(index, 1);
+            refresh_items();
+        }
+
+        function refresh_items()
+        {
+            var str = '';
+            var ids = Array();
+            for (i = 0; i < items.length; i++)
+            {
+                str += "<div style='50px; margin-top:5px;'>" + items[i][1] + " <button onclick='remove_item(" + i + ");'>remove</button></div>";
+                ids.push(items[i][0]);
+            }
+            $('#items_list').html(str);
+            $("#department_work_item_form_student_groups").val(ids.join());
+            $("#department_work_item_form_student_groups_select").val('');
+        }
+
+        function populate_items(ids)
+        {
+            var str = '';
+            items = Array();
+            //console.log(ids);
+            if (ids.length > 0)
+            {
+                $.ajax({
+                    url: "/faculty/groupcourse/jsonlistitems/" + ids,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        //console.log(data);
+                        //var json = JSON.parse(data.responseText);
+                        $.each(data, function (i, item) {
+                            //console.log(data[i].student_lastname + ' ' + data[i].student_firstname + ' ' + data[i].student_patronym);
+                            add_item(data[i].id, data[i].value);
+                            refresh_items();
+                        });
+                    },
+                    error: function (data) {}
+                });
+            }
+        }
+    </script>
+{% endblock %}{# empty Twig template #}

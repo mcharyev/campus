@@ -1,0 +1,142 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Discipline Actions{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='student_id'>Student Id</option>
+                <option value='data'>Data</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form> <a href="/faculty/disciplineaction/new">New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            row_count = 0;
+            $('#main').jtable({
+                title: 'Discipline Actions',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'discipline_action.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/faculty/disciplineaction/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(jtParams.jtSorting);
+                                        $dfd.resolve(data);
+                                        row_count = 0;
+                                    },
+                                    error: function (data) {
+                                        //console.log(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/faculty/disciplineaction/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'No',
+                            create: false,
+                            edit: false,
+                            width: '3%'
+                        },
+                        id: {
+                            title: 'ID',
+                            width: '3%',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            list: true
+                        },
+                        student_id: {
+                            title: 'Student',
+                            options: '/valuepairs/enrolled_student/id/firstname_english/id ASC',
+                            width: '5%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        author_id: {
+                            title: 'Created by',
+                            options: '/valuepairs/user/id/username/id ASC',
+                            width: '5%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        date: {
+                            title: 'Date',
+                            type: 'date',
+                            width: '3%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        data: {
+                            title: 'Data',
+                            type: 'text',
+                            width: '3%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        actions: {
+                            title: 'Actions',
+                            sorting: false,
+                            list: true,
+                            edit: false,
+                            create: false,
+                            display: function (data)
+                            {
+                                info = "<a href='/faculty/disciplineaction/edit/" + data.record.id + "'>Edit</a>";
+                                return info;
+                            }
+
+                        }
+                    }
+                });
+                $('#main').jtable('load');
+            });
+            function search()
+            {
+                window.location.href = "/faculty/disciplineaction/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+    </script>
+{% endblock %}

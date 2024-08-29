@@ -1,0 +1,23 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .main {background-color:#ebebeb;}
+        .boldclass {font-weight:bold;}
+        .red {
+            background-color: #ffa366;
+        }
+        .orange {
+            background-color: #FFD700;
+        }
+    </style>
+{% endblock %}
+{% block moduletitle %}{{ page_title }}{% endblock %}
+{% block main %}
+    <div style="margin:auto;">
+        {{ page_content|raw }}
+    </div>
+{% endblock %}
+{% block customjs %}
+{% endblock %}{# empty Twig template #}
+{# empty Twig template #}

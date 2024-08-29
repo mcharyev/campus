@@ -1,0 +1,27 @@
+INSTALL PHP UNIT TESTING
+ composer require --dev symfony/phpunit-bridge
+ 
+  ./bin/phpunit
+  
+  
+  cache:clear                             Clears the cache
+  cache:pool:clear                        Clears cache pools
+  cache:warmup                            Warms up an empty cache
+  doctrine:cache:clear-collection-region  Clear a second-level cache collection region.
+  doctrine:cache:clear-entity-region      Clear a second-level cache entity region.
+  doctrine:cache:clear-metadata           Clears all metadata cache for an entity manager
+  doctrine:cache:clear-query              Clears all query cache for an entity manager
+  doctrine:cache:clear-query-region       Clear a second-level cache query region.
+  doctrine:cache:clear-result             Clears result cache for an entity manager
+  
+  
+  composer --prefer-dist --verbose -vvv require guzzlehttp/guzzle
+  
+  composer config --global repositories.packagist composer https://packagist.jp
+
+https://github.com/settings/tokens/new?scopes=repo&description=Composer+on+campus+2020-02-28+0708
+
+
+UPDATE `student_absence` SET `student_group_id`=38 WHERE `student_group_id`=39
+
+UPDATE `taught_course` SET `department_code`=66 WHERE `department_id`=15

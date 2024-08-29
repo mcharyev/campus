@@ -1,0 +1,22 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+    </style>
+{% endblock %}
+{% block moduletitle %}Teachers{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div style="margin:auto;">
+        <h3>Teachers</h3>
+        {% if is_granted("ROLE_SPECIALIST") %}
+        <a class="btn btn-outline-success" href='/faculty/teacher/customlist/general'>General list</a> 
+        {% endif %}<p>
+            {{ content|raw }}
+    </div>
+{% endblock %}
+{% block customjs %}
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Study Program{% endblock %}
+{% block customcss %}
+    <style>
+        .verticaltext {
+            -webkit-transform: rotate(-90deg);
+            text-align: center;
+            vertical-align: middle;
+        }
+        .studyProgramRow {font-size:12px;}
+    </style>
+{% endblock %}
+{% block main %}
+    <div style="margin:auto;"><h3>Study Program</h3></div>
+    <div style="margin:auto;">
+        <table class="table">
+            <tr><td>Field:</td> <td>{{ studyprogram.field }}</td></tr>
+            <tr><td>Subfield:</td> <td>{{ studyprogram.subfield }}</td></tr>
+            <tr><td>Major:</td> <td>{{ studyprogram.major }}</td></tr>
+            <tr><td>Degree:</td> <td>{{ studyprogram.degree }}</td></tr>
+            <tr><td>Qualification:</td> <td>{{ studyprogram.qualification }}</td></tr>
+            <tr><td>Approved by:</td> <td>{{ studyprogram.deputy }}</td></tr>
+            <tr><td>Approved date:</td> <td>{{ studyprogram.date }}</td></tr>
+            <tr><td>Agreed by:</td> <td>{{ studyprogram.minister }}</td></tr>
+            <tr><td>Agreed by:</td> <td>{{ studyprogram.rector }}</td></tr>
+        </table>
+
+        <table class="table table-sm table-bordered">
+            <tr><td colspan="34"><h4>{{ studyprogram.nameEnglish }} - {{ studyprogram.approvalYear }} - {{ studyprogram.letterCode }}</h4></td></tr>
+            <tr><td colspan="34"><h4>I. Courses</h4></td></tr>
+            <tr class="studyProgramRow">
+                <td>1</td>
+                <td>2</td>
+                <td>3</td>
+                <td>4</td>
+                <td>5</td>
+                <td>6</td>
+                <td>7</td>
+                <td>8</td>
+                <td>9</td>
+                <td>10</td>
+                <td>11</td>
+                <td>12</td>
+                <td>13</td>
+                <td>14</td>
+                <td>15</td>
+                <td>16</td>
+                <td>17</td>
+                <td>18</td>
+                <td>19</td>
+                <td>20</td>
+                <td>21</td>
+                <td>22</td>
+                <td>23</td>
+                <td>24</td>
+                <td>25</td>
+                <td>26</td>
+                <td>27</td>
+                <td>28</td>
+                <td>29</td>
+                <td>30</td>
+                <td>31</td>
+                <td>32</td>
+                <td>33</td>
+                <td>34</td>
+            </tr>
+            {% set courseNumber = 1 %}
+            {% set columnCounts = 30  %}
+            {% if studyprogram.programLevel.systemId == 7 %}
+                {% set columnCounts = 12  %}
+            {% endif %}
+            {% for module in modules %}
+                {% set module_counts = [0,0,0]  %}
+                <tr><td colspan="34"><h5>{{ module.name }}</h5></td></tr>
+                            {% for programcourse in studyprogram.programcourses %}
+                                {% if programcourse.module.id==module.id %}
+                        <tr>
+                            <td class="studyProgramRow">{{ courseNumber }}</td>
+                            <td class="studyProgramRow">{{ programcourse.nameEnglish }} ({{ programcourse.nameTurkmen }}) [{{ programcourse.department.nameEnglish }}] [{{ programcourse.letterCode }}] <a href='/faculty/programcourse/editinprogram/{{ programcourse.id }}/{{ studyprogram.id }}'>Edit</a></td>
+                            <td class="studyProgramRow">{{ programcourse.semester }}</td>
+                            {% for i in 0..columnCounts %}
+                                <td class="studyProgramRow">
+                                    {% if programcourse.counts[i]>0 %}
+                                        {{ programcourse.counts[i] }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        {% set courseNumber = courseNumber+1 %}
+                    {% endif %}
+                {%  endfor %}
+                <tr>
+                    <td colspan='2' class="studyProgramRow"><strong>Sum</strong></td>
+                    <td class="studyProgramRow"></td>
+                    {% for i in module.counts %}
+                        <td class="studyProgramRow">
+                            {{ i }}
+
+                        </td>
+                    {% endfor %}
+                </tr>
+                <tr><td colspan="34" class="studyProgramRow"><a href='/faculty/programcourse/editinprogram/0/{{ studyprogram.id }}'>Add a course</a></td></tr>
+            {%  endfor %}
+        </table>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+        });
+    </script>
+{% endblock %}{# empty Twig template #}

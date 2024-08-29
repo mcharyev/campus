@@ -1,0 +1,84 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Enrolled Students{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='system_id'>SIS Id</option>
+                <option value='firstname_turkmen'>Firstname</option>
+                <option value='lastname_turkmen'>Lastname</option>
+                <option value='tags'>Tags</option>
+                <option value='data'>Info</option>
+            </select>&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>&nbsp;&nbsp;&nbsp;&nbsp;
+            <select name='group_field' id='group_field'>
+                {% for group in groups %}
+                    {% if group.graduationYear>2019 %}
+                        <option value='{{ group.systemId }}'>{{ group.letterCode }}</option>
+                    {% endif %}
+                {% endfor %}}
+            </select>&nbsp;&nbsp;
+            <input type='button' id='show_group_button' value='Show group' onclick='show_group();'>
+        </div>
+    </form> <a href="/faculty/enrolledstudent/new">New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+        <table id="mainTable" class="table table-sm">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>System ID</th>
+                    <th>Firstname</th>
+                    <th>Lastname</th>
+                    <th>Patronym</th>
+                    <th>Previous Lastname</th>
+                    <th>Firstname</th>
+                    <th>Lastname</th>
+                    <th>Patronym</th>
+                    <th>Previous Lastname</th>
+                    <th>Photo</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#mainTable').DataTable({
+                "ajax": '/faculty/enrolledstudent/datalist',
+                "columnDefs": [
+                    {
+                        "targets": [2],
+                        "visible": false
+                    },
+                    {
+                        "targets": [3],
+                        "visible": false
+                    },
+                    {
+                        "targets": [4],
+                        "visible": false
+                    },
+                    {
+                        "targets": [5],
+                        "visible": false
+                    }
+                ]
+            });
+        });
+
+        function show_group()
+        {
+            window.location.href = "/faculty/enrolledstudent/search/group_code/" + $('#group_field').val();
+        }
+        function showerror(str)
+        {
+            $('#error').html(str);
+        }
+    </script>
+{% endblock %}

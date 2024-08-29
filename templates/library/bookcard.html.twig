@@ -1,0 +1,54 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        @media print  
+        {
+            .card{
+                page-break-inside: avoid;
+            }
+        }
+
+        .itemCell {
+            border: 1px solid #d6d6d6;
+            padding:15px;
+        }
+
+        #codes {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .barcodecell { 	border:0px solid #dfdfd0; }
+        .bookbarcodecell { 	border:1px solid #dfdfd0; clear:both; }
+        .booktitle {font-size:10px;padding-bottom:3px;}
+        .libraryname {padding-bottom:3px; margin:auto;text-align:center;display:inline-block;}
+        .universityname {font-size:12x; font-weight:bold;}
+
+        /*.code {padding-top:3px;width:170px;text-align:center;display:inline-block;border:0px solid black;}
+        .barcode {padding-top:3px; text-align:center;display:inline-block;border:0px solid red;width:100%;}
+        .barcodecell { 	border:0px solid #dfdfd0; }
+        .bookbarcodecell { 	border:1px solid #dfdfd0; clear:both; }*/
+
+
+
+
+    </style>
+{% endblock %}
+{% block moduletitle %}Book barcodes{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div style="margin:auto;">
+        <h2>IUHD Library Book Barcode Generator</h2> 
+        <div id="codes">
+            {{ content|raw }}
+        </div>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+        });
+    </script>
+{% endblock %}

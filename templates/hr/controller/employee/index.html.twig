@@ -1,0 +1,345 @@
+{% extends 'hr.html.twig' %}
+
+{% block moduletitle %}Employees{% endblock %}
+{% block customcss %}
+    <style>
+        .jtable-dialog-form input[type="text"]
+        {
+            min-width: 200px;
+        }
+
+        .jtable-dialog-form {
+            display: block;
+            width: 1200px;
+            -moz-column-gap:30px;
+            -webkit-column-gap:30px;
+            column-gap:30px;
+            -moz-column-count:4;
+            -webkit-column-count:4;
+            column-count:4;
+        }
+    </style>
+{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='firstname'>Firstname</option>
+                <option value='lastname'>Lastname</option>
+                <option value='system_id'>System Id</option>
+                <option value='position'>Position</option>
+                <option value='data'>Info</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form> <a href="/hr/employee/new">New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            row_count = 0;
+            $('#main').jtable({
+                title: 'Employees',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'employee.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/hr/employee/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(jtParams.jtSorting);
+                                        $dfd.resolve(data);
+                                        row_count = 0;
+                                    },
+                                    error: function (data) {
+                                        //console.log(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        updateAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/hr/employee/update',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        //console.log(postData);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        //console.log(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/hr/employee/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'No',
+                            create: false,
+                            edit: false,
+                            width: '3%'
+                        },
+                        id: {
+                            title: 'ID',
+                            width: '2%',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            list: true
+                        },
+                        employee_photo: {
+                            title: 'Photo',
+                            width: '3%',
+                            create: false,
+                            edit: false,
+                            display: function (data) {
+                                return "<img src='/build/employee_photos/" + data.record.system_id + ".jpg' width='60'>";
+                            },
+                            list: true
+                        },
+                        system_id: {
+                            title: 'System ID',
+                            type: 'text',
+                            width: '1%',
+                            list: true
+                        },
+                        employee_fullname: {
+                            title: 'Ady',
+                            create: false,
+                            edit: false,
+                            width: '6%',
+                            display: function (data) {
+                                return data.record.lastname + " " + data.record.firstname + " " + data.record.patronym;
+                            },
+                            sorting: false,
+                            list: true
+                        },
+                        firstname: {
+                            title: 'Firstname',
+                            type: 'text',
+                            list: false
+                        },
+                        lastname: {
+                            title: 'Lastname',
+                            type: 'text',
+                            list: false
+                        },
+                        patronym: {
+                            title: 'Patronym',
+                            type: 'textarea',
+                            list: false
+                        },
+                        position: {
+                            title: 'Position',
+                            type: 'textarea',
+                            width: '3%',
+                            list: true
+                        },
+                        birthdate: {
+                            title: 'Doglan senesi',
+                            type: 'date',
+                            defaultValue: '',
+                            list: false
+                        },
+                        birthplace: {
+                            title: 'Doglan ýeri',
+                            type: 'textarea',
+                            defaultValue: '',
+                            list: false
+                        },
+                        nationality_id: {
+                            title: 'Nationality',
+                            options: '/valuepairs/nationality/id/name_turkmen/id ASC',
+                            width: '4%',
+                            defaultValue: '0',
+                            list: false
+                        },
+                        department_code: {
+                            title: 'Kafedra/Bölüm',
+                            options: '/valuepairs/department/system_id/name_turkmen/system_id ASC',
+                            width: '4%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        gender: {
+                            title: 'Jynsy',
+                            width: '2%',
+                            options: {1: 'Erkek', 0: 'Zenan'},
+                            defaultValue: '1',
+                            list: false
+                        },
+                        status: {
+                            title: 'Ýagdaýy',
+                            width: '2%',
+                            options: {1: 'Işjeň', 0: 'Işjeň däl'},
+                            defaultValue: '1',
+                            list: true
+                        },
+                        worktime_category: {
+                            title: 'Iş wagty',
+                            width: '5%',
+                            options: {0: 'EE 1,00 - 08:00-16:00', 1: 'PM 1,00 - 08:00-15:00', 2: 'PM 1,25 - 08:00-16:30', 3: 'PM 0,75 - 08:00-12:30'},
+                            defaultValue: '1',
+                            list: true
+                        },
+                        data: {
+                            title: 'Maglumat',
+                            type: 'textarea',
+                            width: '2%',
+                            defaultValue: '',
+                            list: false
+                        },
+                        actions: {
+                            title: 'Actions',
+                            sorting: false,
+                            list: true,
+                            edit: false,
+                            create: false,
+                            width: '5%',
+                            display: function (data)
+                            {
+                                info = "<a href='/hr/employee/edit/" + data.record.id + "'>Edit</a> | ";
+                                info += "<a href='/hr/report/employeemonthly/" + data.record.system_id + "'>Monthly report</a>";
+                                info += "<br><a href='/hr/employee/info/" + data.record.id + "'>Info</a>";
+                                return info;
+                            }
+
+                        },
+                        attached_files: {
+                            title: 'Surat faýly',
+                            input: function (data) {
+                                p_id = 0;
+                                if (data.record)
+                                    p_id = data.record.id;
+                                str = '';
+                                str += "<div id='filelist'></div>";
+                                if (p_id != 0)
+                                {
+                                    str += "<form id=\"fileform\" enctype=\"multipart/form-data\">";
+                                    str += "<input name=\"file\" type=\"file\" multiple />";
+                                    //str += "<input type=\"hidden\" title='employee_id' name=\"employee_id\" id=\"employee_id\" value=\""+data.record.employee_id+"\">";
+                                    //str += "<input type=\"text\" title='employee_number' name=\"employee_number\" id=\"employee_number\" value=\""+data.record.employee_number+"\">";
+                                    str += "</form><br><button type=\"button\" onclick=\"uploadphoto(" + data.record.id + ");\">Surat ýükle</button> <button type=\"button\" onclick=\"deletephoto(" + data.record.id + ");\">Suraty aýyr</button>";
+                                }
+                                return str;
+                            },
+                            list: false
+                        }
+                    },
+                    formCreated: function (event, data) {
+                        //console.log('form created');
+                        if (data.record)
+                            listphoto(data.record.id);
+                    }
+                });
+                $('#main').jtable('load');
+            });
+
+            function search()
+            {
+                window.location.href = "/hr/employee/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+
+            function listphoto(id)
+            {
+                var fd = new FormData();
+                fd.append('id', id);
+                $.ajax({
+                    url: '/hr/employee/listphoto',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                        $('#filelist').html(data);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+            function deletephoto(id)
+            {
+                var r = confirm("Suraty aýyrmalymy?");
+                if (r)
+                {
+                    var fd = new FormData();
+                    fd.append('action', 'deletephoto');
+                    fd.append('id', id);
+                    //console.log(fd);
+                    $.ajax({
+                        url: '/hr/employee/deletephoto',
+                        type: 'POST',
+                        data: fd,
+                        success: function (data) {
+                            $('#filelist').html(data);
+                        },
+                        cache: false,
+                        contentType: false,
+                        processData: false
+                    });
+                }
+            }
+
+            function uploadphoto(id)
+            {
+                //console.log('working');
+                //return;
+                var fd = new FormData($("#fileform")[0]);
+                fd.append('id', id);
+                $.ajax({
+                    url: '/hr/employee/uploadphoto',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                        $("#filelist").html(data);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+    </script>
+{% endblock %}

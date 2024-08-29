@@ -1,0 +1,65 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Competition Result Form{% endblock %}
+{% block main %}
+    <div style="width:90%;margin:auto;"><h3>Competition Result Form</h3></div>
+    <div style="width:90%;margin:auto;">
+        {% form_theme form 'bootstrap_4_horizontal_layout.html.twig' %}
+        {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="submit" class="btn btn-primary">Create</button>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+            autocompleting("competition_result_form_studentSearchBox", "enrolledstudent");
+            autocompleting("competition_result_form_advisorSearchBox", "teacher");
+        });
+
+        function autocompleting(id, object)
+        {
+            $("#" + id).autocomplete({
+                minLength: 3,
+                source: function (request, response) {
+                    $.ajax({
+                        url: "/faculty/" + object + "/jsonlist/" + request.term,
+                        dataType: "json",
+                        success: function (data) {
+                            response(data);
+                        }
+                    });
+                },
+                focus: function (event, ui) {
+                    return false;
+                },
+                select: function (event, ui) {
+                    add_item(ui.item, id);
+                    return false;
+                }
+            })
+                    .autocomplete("instance")._renderItem = function (ul, item) {
+                return $("<li>")
+                        .append("<div style='50px; margin-top:5px;'>" + item.name + " " + item.id + "</div>")
+                        .appendTo(ul);
+            };
+        }
+
+        function add_item(item, id) {
+            if (id == 'competition_result_form_studentSearchBox')
+            {
+                $("#competition_result_form_major").val(item.study_program_turkmen);
+                $("#competition_result_form_person").val(item.name);
+                $("#competition_result_form_year").val(item.study_year);
+                $("#competition_result_form_systemid").val(item.id);
+            }
+            if (id == 'competition_result_form_advisorSearchBox')
+            {
+                $("#competition_result_form_advisor").val(item.name);
+                $("#competition_result_form_advisorposition").val(item.teacher_position);
+            }
+        }
+    </script>
+{% endblock %}{# empty Twig template #}
+{# empty Twig template #}

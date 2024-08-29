@@ -1,0 +1,147 @@
+{% extends 'base.html.twig' %}
+{% block moduletitle %}{{ page_title }}{% endblock %}
+{% block customcss %}
+    <style>
+        body {
+            overflow-x: hidden;
+        }
+
+        #sidebar-wrapper {
+            min-height: 100vh;
+            margin-left: -15rem;
+            -webkit-transition: margin .25s ease-out;
+            -moz-transition: margin .25s ease-out;
+            -o-transition: margin .25s ease-out;
+            transition: margin .25s ease-out;
+        }
+
+        #sidebar-wrapper .sidebar-heading {
+            padding: 0.875rem 1.25rem;
+            font-size: 1.2rem;
+        }
+
+        #sidebar-wrapper .list-group {
+            width: 15rem;
+        }
+
+        #page-content-wrapper {
+            min-width: 100vw;
+        }
+
+        #wrapper.toggled #sidebar-wrapper {
+            margin-left: 0;
+        }
+
+        @media (min-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: 0;
+            }
+
+            #page-content-wrapper {
+                min-width: 0;
+                width: 100%;
+            }
+
+            #wrapper.toggled #sidebar-wrapper {
+                margin-left: -15rem;
+            }
+        }
+
+        .logo { border:1px solid gray;padding-top:5px; padding-bottom:5px; padding-left:10px; padding-right:10px; border-radius: 20px; background-color: #01af1e; color:#fff;}
+
+        #twrapper {
+            display: flex;
+        }
+
+        #tleft {
+            flex: 0 0 65%;
+        }
+
+        #tright {
+            flex: 1;
+        }
+
+        .svg-icon {
+            width: 1em;
+            height: 1em;
+        }
+
+        .svg-icon path,
+        .svg-icon polygon,
+        .svg-icon rect {
+            fill: #4691f6;
+        }
+
+        .svg-icon circle {
+            stroke: #4691f6;
+            stroke-width: 1;
+        }
+    </style>
+{% endblock %}
+{% block body %}
+    <form name="main" id="main" enctype="multipart/form-data">
+        <input type='hidden' name='action' id='action'>
+        <input type='hidden' name='course_code' id='course_code'>
+        <input type='hidden' name='course_id' id='course_id'>
+        <!-- Page Content -->
+        <div class="container">
+            <div class="row">
+                <div class="col" style="margin-top:-40px;">
+                    <h1 class="mt-5 white"><span class='logo'>IUHD+</span> Digital Education Platform</h1>
+                    <a href='/'>Campus</a> 
+                    Browse by: 
+                    <a href='/iuhdplus/departments'>Departments</a> | 
+                    <a href='/iuhdplus/programs'>Programs</a> | 
+                    <a href='/iuhdplus/instructors'>Instructors</a><br>
+                </div></div>
+                {{ page_content|raw }}
+    </form>
+{% endblock %}
+{% block customjs %}
+    <script type='text/javascript'>
+        function create(id)
+        {
+            console.log(id);
+            $("#action").val('createdirectory');
+            $("#course_id").val(id);
+            send_data(id);
+        }
+
+        function perform(code, id, action)
+        {
+            if (action == 'deletecoursedata')
+            {
+                var r = confirm("Are you sure you want to delete the file " + code + "?");
+                if (!r) {
+                    return 0;
+                }
+            }
+            console.log(code + ":" + id);
+            $("#div" + id).html(code);
+            //$("#course_code"+id).val(code);
+            $("#action").val(action);
+            $("#course_code").val(code);
+            $("#course_id").val(id);
+            send_data(id);
+        }
+
+        function send_data(id)
+        {
+            var fd = new FormData($("#main")[0]);
+            //fd.append('action', '');
+            //console.log(fd);
+            $.ajax({
+                url: '/iuhdplus/file/'+$('#action').val(),
+                type: 'POST',
+                data: fd,
+                success: function (data) {
+                    $("#div" + id).html(data);
+                },
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+        }
+    </script>
+{% endblock %}{# empty Twig template #}
+{# empty Twig template #}

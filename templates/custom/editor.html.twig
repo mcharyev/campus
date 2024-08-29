@@ -1,0 +1,63 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+        .datawide {
+            width: 400px;
+        }
+    </style>
+{% endblock %}
+{% block moduletitle %} Editor{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div style="margin:auto;">
+        <h3>Editor</h3>
+        <p>
+            {{ content|raw }}
+            </p>
+            <br><div id='output'></div>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+        });
+
+        function saveData()
+        {
+            //console.log('i am running');
+            //console.log($('#bigdata').val());
+            sendData("/custom/tableeditor/update");
+        }
+
+        function importData(import_type)
+        {
+            //console.log('i am running');
+            $('#import_type').val(import_type);
+            sendData("/custom/tableeditor/importdata");
+        }
+
+        function sendData(url)
+        {
+            p = url;
+            var inputs = $("#mainform").serialize();
+            //console.log(inputs);
+            //return;
+            $.ajax({
+                type: "POST",
+                url: p,
+                data: inputs,
+                success: function (msg) {
+                    //console.log(msg);
+                    $('#output').html(msg);
+                },
+                error: function (request, status, error) {
+                    $('#output').html(request.responseText);
+                },
+            });
+        }
+    </script>
+{% endblock %}

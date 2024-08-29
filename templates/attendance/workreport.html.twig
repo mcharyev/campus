@@ -1,0 +1,342 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .main {background-color:#ebebeb;}
+        .columnName {vertical-align:middle;}
+        .low { color: #d6d6d4;}
+        .normal {color: black;}
+        .red {color: red; font-weight:bold;}
+        th { background-color: #F5F5F5}
+        tfoot {font-weight:bold; font-size:12px; background-color: #F9F9F9}
+
+    </style>
+{% endblock %}
+{% block moduletitle %}Work Report{% endblock %}
+{% block main %}
+    <div class="no-print" style="margin:auto;width:auto;text-align:center;">Personal workloads:
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/0'>1.00</a> | 
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/1'>0.75</a> | 
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/2'>0.50</a> | 
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/3'>0.25</a> | 
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/4'>0.33</a> | 
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/5'>Hourly</a>
+    </div>
+    <div class="no-print" style="margin:auto;width:auto;text-align:center;">Work reports:
+        <a href='/faculty/teacherworkreport/{{ teacher.id }}/{{ year }}/{{ semester }}/0'>1.00</a> | 
+        <a href='/faculty/teacherworkreport/{{ teacher.id }}/{{ year }}/{{ semester }}/1'>0.75</a> | 
+        <a href='/faculty/teacherworkreport/{{ teacher.id }}/{{ year }}/{{ semester }}/2'>0.50</a> | 
+        <a href='/faculty/teacherworkreport/{{ teacher.id }}/{{ year }}/{{ semester }}/3'>0.25</a> | 
+        <a href='/faculty/teacherworkreport/{{ teacher.id }}/{{ year }}/{{ semester }}/4'>0.33</a> | 
+        <a href='/faculty/teacherworkreport/{{ teacher.id }}/{{ year }}/{{ semester }}/5'>Hourly</a>
+    </div>
+    <br>
+    <div>
+        <center>
+            <div>
+                <span class='excellable' data-excel='{"cell":"C4"}'>{{ teacher.department.nameTurkmen }}</span>
+                <br>
+                <h4>Workload Report for: 
+                    <span class='excellable' data-excel='{"cell":"C3"}'>{{ teacher.fullname }}</span>
+                    (<span class='excellable' data-excel='{"cell":"C5"}'>{{ workloadNames[workload] }}</span>)
+                </h4>
+            </div>
+            {% set monthNamesEnglish = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] %}
+            {% set monthNamesTurkmen = ['ýanwar', 'fewral', 'mart', 'aprel', 'maý', 'iýun', 'iýul', 'awgust', 'sentýabr', 'oktýabr', 'noýabr', 'dekabr'] %}
+            {% for month in months %}
+                <div>
+                    Month: {{ monthNamesTurkmen[month - 1] }}&nbsp;&nbsp;&nbsp;
+                    <button onclick="download('template_teacher_monthly_report.xlsx', 'teacher_monthly_report_{{ teacher.fullname }}_{{ month }}.xls', 10,{{ month }} , '{{ monthNamesTurkmen[month - 1] }}')">xlsx</button></div>
+                <table class='table table-sm table-bordered extrasmall'>
+                    <thead>
+                        <tr>
+                            {% for workColumn in workColumns %}
+                                <th> {{ workColumn }}</th>
+                                {% endfor %}
+                        </tr>
+                        <tr>
+                            {% for workColumn in workColumns %}
+                                <th style='vertical-align:middle;text-align:center;'> {{ workColumnTexts[workColumn] }}</th>
+                                {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for workitem in workitems[month] %}
+                            <tr class='excellablerow_{{ month }}'>
+                                <td style='vertical-align:middle;text-align:center;'>{{ workitem.number }}</td>
+                                <td style='vertical-align:middle;text-align:center;'>{{ workitem.title }}</td>
+                                <td style='vertical-align:middle;text-align:center;'>{{ workitem.groups }}</td>
+                                {% for u in 4..28 %}
+                                    {% if workitem.courseData[u] == 0  %}
+                                        {% set colorClass = 'low' %}
+                                    {% else %}
+                                        {% set colorClass = 'normal' %}
+                                    {% endif %}
+                                    <td class='{{ colorClass }}' style='vertical-align:middle;text-align:center;'>{{ workitem.courseData[u] }}</td>
+                                {% endfor %}
+                                {% if workitem.courseData[29] == 0  %}
+                                    {% set colorClass = 'low' %}
+                                {% else %}
+                                    {% set colorClass = 'normal' %}
+                                {% endif %}
+                                <td class='{{ colorClass }}' style='vertical-align:middle;text-align:center;'>{{ workitem.courseData[29] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr id='footerrow_{{ month }}' class='boldtext'>
+                            <td></td>
+                            <td style='vertical-align:middle;text-align:center;'>Jemi</td>
+                            <td></td><td></td><td></td><td></td><td></td><td></td>
+                            {% for u in 9..29 %}
+                                {% if monthSums[month][u] == 0  %}
+                                    {% set colorClass = 'low' %}
+                                {% else %}
+                                    {% set colorClass = 'normal' %}
+                                {% endif %}
+                                <td class='{{ colorClass }}' style='vertical-align:middle;text-align:center;'>
+                                    {{ monthSums[month][u] }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    </tfoot>
+                </table>
+            {% endfor %}
+            <div>Summary by Type</div>
+            <table class='table table-sm table-bordered extrasmall'>
+                <thead>
+                    <tr>
+                        {% for workColumn in workColumns %}
+                            <th> {{ workColumn }}</th>
+                            {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for workColumn in workColumns %}
+                            <th style='vertical-align:middle;text-align:center;'> {{ workColumnTexts[workColumn] }}</th>
+                            {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set colorClass = 'normal' %}
+                    {% for workitem in workitemsData %}
+                        <tr>
+                            <td style='vertical-align:middle;text-align:center;'>{{ workitem.number }}</td>
+                            <td style='vertical-align:middle;text-align:center;'>{{ workitem.title }}</td>
+                            <td style='vertical-align:middle;text-align:center;'>{{ workitem.groups }}</td>
+                            {% for u in 4..28 %}
+                                {% if workitem.item.data[u] == 0 %}
+                                    {% set colorClass = 'low' %}
+                                {% else %}
+                                    {% if u > 9 %}
+                                        {% if workitem.item.data[u] != workitem.item_sums[u]  %}
+                                            {% set colorClass = 'red' %}
+                                        {% else %}
+                                            {% set colorClass = 'normal' %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                                {% if u > 8 %}
+                                    {% if ((u != 9 and u != 11 and u != 13)) %}
+                                        <td class='{{ colorClass }}' style='vertical-align:middle;text-align:center;'>{{ workitem.item_sums[u] }} / {{ workitem.item.data[u] }}</td>
+                                    {% else %}
+                                        <td class='{{ colorClass }}' style='vertical-align:middle;text-align:center;'>0</td>
+                                    {% endif %}
+                                {% else %}
+                                    <td class='{{ colorClass }}' style='vertical-align:middle;text-align:center;'>{{ workitem.item.data[u] }}</td>
+                                {% endif %}
+                            {% endfor %}
+                            {% if workitem.item.data[29] == 0  %}
+                                {% set colorClass = 'red' %}
+                            {% else %}
+                                {% set colorClass = 'normal' %}
+                            {% endif %}
+                            <td class='{{ colorClass }}' style='vertical-align:middle;text-align:center;'>{{ workitem.item_sums[29] }} / {{ workitem.item.data[29] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td></td>
+                        <td style='vertical-align:middle;text-align:center;'>TOTAL</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td>
+                        {% for u in 9..29 %}
+                            {% if totalTypeSums[u] == 0 and totalLoadSums[u] == 0  %}
+                                {% set colorClass = 'low' %}
+                            {% else %}
+                                {% if u > 9 %}
+                                    {% if totalTypeSums[u] != totalLoadSums[u]  %}
+                                        {% set colorClass = 'red' %}
+                                    {% else %}
+                                        {% set colorClass = 'normal' %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                            {% if ((u != 9 and u != 11 and u != 13)) %}
+                                <td class='{{ colorClass }}' style='vertical-align:middle;text-align:center;'>{{ totalTypeSums[u] }} / {{ totalLoadSums[u]  }}</td>
+                            {% else %}
+                                <td class='{{ colorClass }}' style='vertical-align:middle;text-align:center;'>0</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                </tfoot>
+            </table><br>
+
+            <div>Summary by Month</div>
+            <table class='table table-sm table-bordered extrasmall'>
+                <thead>
+                    <tr>
+                        {% for workColumn in workColumns %}
+                            <th> {{ workColumn }}</th>
+                            {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for workColumn in workColumns %}
+                            <th style='vertical-align:middle;text-align:center;'> {{ workColumnTexts[workColumn] }}</th>
+                            {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for month in months %}
+                        <tr>
+                            <td style='vertical-align:middle;text-align:center;'>{{ loop.index }}</td>
+                            <td style='vertical-align:middle;text-align:center;'>{{ monthNamesEnglish[month-1] }}</td>
+                            <td></td><td></td><td></td><td></td><td></td><td></td>
+                            {% for u in 9..29 %}
+                                {% if monthSums[month][u] == 0  %}
+                                    {% set colorClass = 'low' %}
+                                {% else %}
+                                    {% set colorClass = 'normal' %}
+                                {% endif %}
+                                <td class='{{ colorClass }}' style='vertical-align:middle;text-align:center;'>
+                                    {{ monthSums[month][u] }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td></td>
+                        <td style='vertical-align:middle;text-align:center;'>TOTAL</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td>
+                        {% for u in 9..29 %}
+                            {% if totalTypeSums[u] == 0  %}
+                                {% set colorClass = 'low' %}
+                            {% else %}
+                                {% set colorClass = 'normal' %}
+                            {% endif %}
+                            <td class='{{ colorClass }}' style='vertical-align:middle;text-align:center;'>
+                                {{ totalTypeSums[u] }}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                </tfoot>
+            </table><br><br><br>
+        </center>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        // $(document).ready(function () {
+        function download(templatefile, filename, startrow, month, monthString) {
+            special_cells = Array();
+            //add special cells
+            $('.excellable').each(function (i, obj) {
+                //test
+                //console.log(obj);
+                //console.log($(this).data('excel'));
+                special_cells.push([$(this).data('excel').cell, $(this).html()]);
+            });
+            special_cells.push(["U5", monthString]);
+            //console.log(special_cells);
+            //return;
+            rows = Array();
+            var targetParams = [
+                [0, 'A'],
+                [1, 'B'],
+                [2, 'C'],
+                [3, 'D'],
+                [4, 'E'],
+                [5, 'F'],
+                [6, 'G'],
+                [7, 'H'],
+                [8, 'I'],
+                [9, 'J'],
+                [10, 'K'],
+                [11, 'L'],
+                [12, 'M'],
+                [13, 'N'],
+                [14, 'O'],
+                [15, 'P'],
+                [16, 'Q'],
+                [17, 'R'],
+                [18, 'S'],
+                [19, 'T'],
+                [20, 'U'],
+                [21, 'V'],
+                [22, 'W'],
+                [23, 'X'],
+                [24, 'Y'],
+                [25, 'Z'],
+                [26, 'AA'],
+                [27, 'AB'],
+                [28, 'AC']
+            ];
+            //console.log(targetParams.length);
+            //console.log('Month: '+month);
+            $('.excellablerow_' + month).each(function () {
+                row = Array();
+                for (i = 0; i < targetParams.length; i++)
+                {
+                    //console.log("Column:"+i);
+                    item = targetParams[i];
+                    //console.log("Value:"+$(this).find("td").eq(item[0]).html());
+                    row.push([item[1], $(this).find("td").eq(item[0]).html()]);
+                }
+                rows.push(row);
+            });
+            footerRow = $('#footerrow_' + month);
+            footerRowData = Array();
+            for (i = 0; i < targetParams.length; i++)
+            {
+                //console.log(i);
+                item = targetParams[i];
+                //console.log($(this).find("td").eq(item[0]).html());
+                footerRowData.push([item[1], footerRow.find("td").eq(item[0]).html()]);
+            }
+            //console.log(footerRowData);
+            //return;
+            // Data to post
+            data = {
+                template: templatefile,
+                special_cells: special_cells,
+                startrow: startrow,
+                rows: rows,
+                footerRowData: footerRowData
+            };
+
+            // Use XMLHttpRequest instead of Jquery $ajax
+            xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                var a;
+                if (xhttp.readyState === 4 && xhttp.status === 200) {
+                    // Trick for making downloadable link
+                    a = document.createElement('a');
+                    a.href = window.URL.createObjectURL(xhttp.response);
+                    // Give filename you wish to download
+                    a.download = filename;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                }
+            };
+            // Post data to URL which handles post request
+            xhttp.open("POST", '/interop/exporter/postdata');
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            // You should set responseType as blob for binary responses
+            xhttp.responseType = 'blob';
+            xhttp.send(JSON.stringify(data));
+        }
+        //});
+    </script>
+{% endblock %}

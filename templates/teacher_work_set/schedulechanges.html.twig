@@ -1,0 +1,135 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Teacher Work Set Schedule Changes{% endblock %}
+{% block customcss %}
+    <style>
+        .verticaltext {
+            -webkit-transform: rotate(-90deg);
+            text-align: center;
+            vertical-align: middle;
+        }
+        .extrasmall {font-size:11px;}
+        .studyProgramRow {font-size:12px;}
+        .editable {border:0px;width:25px;}
+        .low { color: #d6d6d4;}
+        .normal {color: black;}
+    </style>
+{% endblock %}
+{% block main %}
+    {% set workloadNames = ['1.00','0.75','0.50','0.25','other','Hourly','replacement','vacancy'] %}
+    {% set includeColumnNames = ['All','Lecture only','Practice only','Lab only','Exams only'] %}
+    {% if teacherWorkSet!=null %}
+        <div style="margin:auto;">
+            <h5>Teacher WorkSet Schedule Changes</h5>
+        </div>
+        <table id="mainTable" class="table table-bordered table-compact table-sm table-striped" style="width:auto;">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Id</th>
+                    <th>Schedule Item</th>
+                    <th>Course name</th>
+                    <th>Substituted for</th>
+                    <th>Substituted by</th>
+                    <th>Old date</th>
+                    <th>New date</th>
+                    <th>Old session</th>
+                    <th>New session</th>
+                    <th>Type</th>
+                    <th>Hours</th>
+                    <th>Day of week</th>
+                    <th>Schedule Item Day</th>
+                    <th>Match</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set substituteSum = 0 %}
+                {% set order = 1 %}
+                {% for scheduleChange in scheduleChanges %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <a href="/faculty/schedulechange/edit/{{ scheduleChange.id }}" target="_blank">
+                                {{ scheduleChange.id }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="/faculty/scheduleitem/edit/{{ scheduleChange.scheduleItem.id }}" target="_blank">
+                                {{ scheduleChange.scheduleItem.id }}
+                            </a>
+                        </td>
+                        <td>{{ scheduleChange.scheduleItem.taughtCourse.nameEnglish  }}</td>
+                        <td>
+                            {{ scheduleChange.scheduleItem.taughtCourse.teacher.shortFullname }}
+                        </td>
+                        <td>
+                            {{ scheduleChange.newTeacher.shortFullname }}  
+                        </td>
+                        <td>
+                            {{ scheduleChange.date|date('d.m.Y') }}
+                        </td>
+                        <td>
+                            {{ scheduleChange.newDate|date('d.m.Y') }}
+                        </td>
+                        <td>
+                            {{ scheduleChange.session }}
+                        </td>
+                        <td>
+                            {{ scheduleChange.newSession }}  
+                        </td>
+                        <td>
+                            {{ scheduleChange.classType.nameEnglish }}  
+                        </td>
+                        <td>
+                            {{ scheduleChange.classType.hours }}
+                            {% set substituteSum = substituteSum + scheduleChange.classType.hours %}
+                        </td>
+                        <td>
+                            {{ scheduleChange.date|date('w') }}
+                        </td>
+                        <td>
+                            {{ scheduleChange.scheduleItem.day }}
+
+                        </td>
+                        <td>
+                            {% if scheduleChange.date|date('w') != scheduleChange.scheduleItem.day %}
+                                ERROR
+                            {% endif %}
+                        </td>
+                    </tr>    
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>Total hours</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>{{ substituteSum }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    {% endif %}
+{% endblock %}
+{% block customjs %}
+    <script>
+        $(document).ready(function () {
+            $('#mainTable').DataTable({
+                dom: 'Bfrtip',
+                lengthMenu: [
+                    [25, 50, 100, -1],
+                    ['25 rows', '50 rows', '100 rows', 'Show all']
+                ],
+                buttons: [
+                    'pageLength', 'copy', 'excel', 'pdf'
+                ]
+            });
+        });
+    </script>
+{% endblock %}{# empty Twig template #}

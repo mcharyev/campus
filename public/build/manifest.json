@@ -1,0 +1,20 @@
+{
+  "build/app.css": "/build/app.css",
+  "build/app.js": "/build/app.js",
+  "build/runtime.js": "/build/runtime.js",
+  "build/images/add.png": "/build/images/add.5a8c75a8.png",
+  "build/images/bg-thead.png": "/build/images/bg-thead.280b895d.png",
+  "build/images/close.png": "/build/images/close.df4ebdcc.png",
+  "build/images/column-asc.png": "/build/images/column-asc.b06ff7a2.png",
+  "build/images/column-desc.png": "/build/images/column-desc.01ee5cbd.png",
+  "build/images/column-sortable.png": "/build/images/column-sortable.9e54c585.png",
+  "build/images/delete.png": "/build/images/delete.21cad5f6.png",
+  "build/images/edit.png": "/build/images/edit.885ac868.png",
+  "build/images/loading.gif": "/build/images/loading.03781299.gif",
+  "build/images/ui-icons_444444_256x240.png": "/build/images/ui-icons_444444_256x240.d10bc070.png",
+  "build/images/ui-icons_555555_256x240.png": "/build/images/ui-icons_555555_256x240.00dd0ec0.png",
+  "build/images/ui-icons_777620_256x240.png": "/build/images/ui-icons_777620_256x240.4e7e3e14.png",
+  "build/images/ui-icons_777777_256x240.png": "/build/images/ui-icons_777777_256x240.40bf2579.png",
+  "build/images/ui-icons_cc0000_256x240.png": "/build/images/ui-icons_cc0000_256x240.093a8191.png",
+  "build/images/ui-icons_ffffff_256x240.png": "/build/images/ui-icons_ffffff_256x240.ea4ebe07.png"
+}

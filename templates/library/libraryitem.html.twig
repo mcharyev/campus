@@ -1,0 +1,480 @@
+{% extends 'library.html.twig' %}
+
+{% block moduletitle %}Library Item{% endblock %}
+{% block customcss %}
+    <style>
+        .photo {width:70px;}
+        #QuickImageLinks
+        {
+            text-align: center;
+        }
+
+        .jtable-dialog-form input[type="text"]
+        {
+            min-width: 200px;
+        }
+
+        .jtable-dialog-form {
+            display: block;
+            width: 1200px;
+            -moz-column-gap:30px;
+            -webkit-column-gap:30px;
+            column-gap:30px;
+            -moz-column-count:4;
+            -webkit-column-count:4;
+            column-count:4;
+        }
+    </style>
+{% endblock %}
+{% block main %}
+    <h5>{{ libraryUnit.nameEnglish }}</h5>
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='main_title'>Title</option>
+                <option value='secondary_title'>Subtitle</option>
+                <option value='author'>Author</option>
+                <option value='call_number'>Call number</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form>
+    <!--<a href='/library/libraryitem/new'>New</a>-->
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#main').jtable({
+                title: 'Library Items',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'd.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/library/libraryitem/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        //console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        createAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                console.log(postData)
+                                $.ajax({
+                                    url: '/library/libraryitem/create',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        $("#error").html(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $("#error").html(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        updateAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/library/libraryitem/update',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data.responseText);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        console.log(data.responseText);
+                                        showerror(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/library/libraryitem/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'T/b',
+                            create: false,
+                            edit: false,
+                            width: '1%'
+                        },
+                        id: {
+                            title: 'ID',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            width: '1%',
+                            list: false
+                        },
+                        call_number: {
+                            title: 'Inwentar belgisi',
+                            type: 'text',
+                            width: '1%',
+                            defaultValue: '',
+                            list: true
+                        },
+                        call_number_original: {
+                            title: 'Birinji nusgaň inwentar belgisi',
+                            type: 'text',
+                            width: '1%',
+                            defaultValue: '',
+                            list: false
+                        },
+                        uok: {
+                            title: 'UOK',
+                            type: 'text',
+                            width: '2%',
+                            defaultValue: '',
+                            list: true
+                        },
+                        date_created: {
+                            title: 'Girizilen senesi',
+                            type: 'date',
+                            width: '2%',
+                            displayFormat: 'dd-mm-yy',
+                            edit: false
+                        },
+                        photo: {
+                            title: 'Surat',
+                            width: '2%',
+                            create: false,
+                            edit: false,
+                            display: function (data) {
+                                return "<img src='/build/library/" + data.record.library_unit_id + "/items/photos/" + data.record.call_number_original + ".jpg' width='100'> <div id='drop" + data.record.id + "'></div>";
+                            },
+                            list: true
+                        },
+                        main_title: {
+                            title: 'Ady',
+                            type: 'textarea',
+                            width: '4%',
+                            defaultValue: ''
+                        },
+                        secondary_title: {
+                            title: 'Goşmaça ady',
+                            type: 'textarea',
+                            width: '2%',
+                            defaultValue: '',
+                            list: false
+                        },
+                        author: {
+                            title: 'Awtory',
+                            type: 'textarea',
+                            width: '4%'
+                        },
+                        year: {
+                            title: 'Ýyly',
+                            type: 'text',
+                            width: '1%',
+                            list: false
+                        },
+                        edition: {
+                            title: 'Neşir',
+                            type: 'text',
+                            width: '2%',
+                            defaultValue: '',
+                            list: false
+                        },
+                        number: {
+                            title: 'Sany',
+                            type: 'text',
+                            width: '2%',
+                            defaultValue: '',
+                            list: false
+                        },
+                        volume: {
+                            title: 'Tomy',
+                            width: '2%',
+                            type: 'text',
+                            defaultValue: '1',
+                            list: false
+                        },
+                        copy_number: {
+                            title: 'Nusgasy',
+                            type: 'text',
+                            width: '1%',
+                            defaultValue: '',
+                            list: true
+                        },
+                        isbn: {
+                            title: 'ISBN belgisi',
+                            type: 'text',
+                            width: '2%',
+                            defaultValue: '',
+                            list: false
+                        },
+                        writer_number: {
+                            title: 'Ýazarman belgisi',
+                            type: 'text',
+                            width: '2%',
+                            defaultValue: '',
+                            list: false
+                        },
+                        library_unit_id: {
+                            title: 'Kitaphana',
+                            width: '1%',
+                            options: {'{{ libraryUnit.id }}': '{{ libraryUnit.nameEnglish }}'},
+                            defaultValue: {{ libraryUnit.id }},
+                            edit: true,
+                            disabled: true
+                        },
+                        type: {
+                            title: 'Type',
+                            options: '/valuepairs/library_item_type/id/name_english/id ASC',
+                            width: '3%',
+                            defaultValue: '1',
+                            list: true
+                        },
+                        status: {
+                            title: 'Ýagdaýy',
+                            width: '1%',
+                            options: {'1': 'Içinde', '0': 'Daşynda'},
+                            defaultValue: '1'
+                        },
+                        publisher: {
+                            title: 'Neşirýat',
+                            type: 'text',
+                            width: '2%',
+                            list: false
+                        },
+                        place: {
+                            title: 'Neşir ýeri',
+                            type: 'text',
+                            width: '2%',
+                            list: false
+                        },
+                        language_id: {
+                            title: 'Dili',
+                            width: '1%',
+                            options: {'0': '', '1': 'iňlis', '2': 'türkmen', '3': 'rus'},
+                            defaultValue: '2',
+                            list: false
+                        },
+                        actions: {
+                            title: 'Amallar',
+                            create: false,
+                            edit: false,
+                            width: '2%',
+                            display: function (data) {
+                                return "<a target='_new' href='/library/libraryitem/bookcard/" + data.record.library_unit_id + "/" + data.record.call_number + "/84'>Barcode</a>";
+                            },
+                            sorting: false,
+                            list: true
+                        },
+                        attached_files: {
+                            title: 'Surat faýly',
+                            input: function (data) {
+                                p_id = 0;
+                                if (data.record)
+                                    p_id = data.record.item_id;
+                                str = '';
+                                str += "<div id='filelist'></div>";
+                                if (p_id != 0)
+                                {
+                                    str += "<form id=\"fileform\" enctype=\"multipart/form-data\">";
+                                    str += "<input name=\"file\" type=\"file\" multiple />";
+                                    //str += "<input type=\"hidden\" title='item_id' name=\"item_id\" id=\"item_id\" value=\""+data.record.item_id+"\">";
+                                    //str += "<input type=\"text\" title='item_number' name=\"item_number\" id=\"item_number\" value=\""+data.record.item_number+"\">";
+                                    str += "</form><br><button type=\"button\" onclick=\"uploadphoto(" + data.record.id + "," + data.record.call_number_original + ");\">Surat ýükle</button> <button type=\"button\" onclick=\"deletephoto(" + data.record.id + "," + data.record.call_number_original + ");\">Surat aýyr</button><br><button type=\"button\" onclick=\"multiply(" + data.record.item_id + ");\">Köpelt</button>";
+                                }
+                                return str;
+                            },
+                            list: false
+                        }
+                    },
+                    recordsLoaded: function ()
+                    {
+                        ['dragenter', 'dragover', 'dragleave'].forEach(eventName => {
+                            $('tr.jtable-data-row').on(eventName, preventDefaults, false);
+                            //                   $('.imagefield').parent().on(eventName, preventDefaults, false);
+                            //console.log(eventName);
+                        })
+
+                        $('tr.jtable-data-row').on('drop', function (e) { //use on if jQuery 1.7+
+                            //console.log($(this).data('record-key'));
+                            fileDropped(e, $(this).data('record-key'));
+                        });
+                    },
+                    formCreated: function (event, data) {
+                        if (data.record)
+                            listphoto(data.record.id);
+                    }
+
+                });
+                $('#main').jtable('load');
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault()
+                e.stopPropagation()
+            }
+
+            function fileDropped(e, id) {
+                //console.log('working');
+                $("#drop" + id).html('Loading...');
+                e.preventDefault();  //prevent form from submitting
+                //return;
+                //console.log(e.originalEvent.dataTransfer.files);
+                file0 = e.originalEvent.dataTransfer.files[0];
+                //return;
+                var fd = new FormData();
+                fd.append('id', id);
+                fd.append('file', file0);
+                $.ajax({
+                    url: '/library/libraryitem/uploaditemphoto',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                        $("#drop" + id).html(data);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+            function uploadphoto(id, number)
+            {
+                //console.log('working');
+                //return;
+                var fd = new FormData($("#fileform")[0]);
+                fd.append('id', id);
+                fd.append('number', number);
+                $.ajax({
+                    url: '/library/libraryitem/uploaditemphoto',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                        $("#filelist").html(data);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+            function deletephoto(id, number)
+            {
+                var r = confirm("Suraty aýyrmalymy?");
+                if (r)
+                {
+                    var fd = new FormData();
+                    fd.append('action', 'deleteitemphoto');
+                    fd.append('id', id);
+                    fd.append('number', number);
+                    //console.log(fd);
+                    $.ajax({
+                        url: '/library/libraryitem/deleteitemphoto',
+                        type: 'POST',
+                        data: fd,
+                        success: function (data) {
+                            $('#filelist').html(data);
+                        },
+                        cache: false,
+                        contentType: false,
+                        processData: false
+                    });
+                }
+            }
+
+            function listphoto(id)
+            {
+                var fd = new FormData();
+                fd.append('id', id);
+                $.ajax({
+                    url: '/library/libraryitem/listitemphoto',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                        $('#filelist').html(data);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+            function multiply(id)
+            {
+                //console.log('working');
+                //return;
+                var count = prompt(" Näçe nusga köpeltmek isleýärsiňiz? (How many duplicates do you want to create?)", 0);
+                var callnumber = prompt(" Haýsy inwentar belgiden başlap köpeltmeli? (haýsy inwentary köpeldýän bolsaňyz şony ýazyň)", 0);
+                var r = confirm("Maglumatlary dogry girizdiňizmi? Dowam etmelimi?");
+                if (r)
+                {
+                    if (count != null && parseInt(count) > 0) {
+                        var fd = new FormData();
+                        fd.append('item_count', count);
+                        fd.append('item_callnumber', callnumber);
+                        $.ajax({
+                            url: '/library/libraryitem/multiplyitem',
+                            type: 'POST',
+                            data: fd,
+                            success: function (data) {
+                                $("#filelist").html(data);
+                            },
+                            error: function (data) {
+                                $("#filelist").html(data);
+                            },
+                            cache: false,
+                            contentType: false,
+                            processData: false
+                        });
+                    }
+                }
+            }
+
+            function search()
+            {
+                window.location.href = "/library/libraryitem/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+    </script>
+{% endblock %}

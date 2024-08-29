@@ -1,0 +1,475 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .smallcourseinfo {font-size:10px;padding:5px;}
+        .today_class {background-color:green;color:#fff;}
+        .freeday_class {background-color:red;color:#fff;}
+        .coverday_class {background-color:blue;color:#fff;}
+        .changed_class {background-color:darkorange;color:#fff;}
+        .everyday_class {}
+    </style>
+{% endblock %}
+{% block moduletitle %}Attendance{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div style="margin:auto;">
+        <h3>Course Attendance</h3><p>
+            Course title: {{ course.nameEnglish }}<br>
+            Instructor: {{ course.teacherName }} (Viewing Teacher: {{ viewingTeacher.fullname }})<br>
+            Groups: 
+            {% for grouppack in grouppacks %}
+                {{ grouppack.group.letterCode }},
+            {% endfor %}<br>
+            {% if is_granted("ROLE_SPECIALIST") %}
+                Authorized deans: 
+                {% for dean in deans %}
+                    {{ dean.fullname }}, 
+                {% endfor %}<br>
+                Authorized department heads: 
+                {% for departmentHead in departmentHeads %}
+                    {{ departmentHead.fullname }}, 
+                {% endfor %}<br>
+            {% endif %}
+        <div>From: <input type="text" id="begindatepicker" size="15" value="{{ beginDate }}"> To:<input type="text" id="enddatepicker" size="15" value="{{ endDate }}"> 
+            <button id="btn_view_interval">View</button> 
+            <button id="btn_view_today">Today</button> 
+            <button id="btn_view_thisweek">This week</button> 
+            <select id="cbx_weeknumber">
+                <option value="1">Select a week</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="13">13</option>
+                <option value="14">14</option>
+                <option value="15">15</option>
+                <option value="16">16</option>
+                <option value="17">17</option>
+                <option value="18">18</option>
+            </select>
+            <button onclick='viewMonth(9);'>September</button>
+            <button onclick='viewMonth(10);'>October</button>
+            <button onclick='viewMonth(11);'>November</button>
+            <button onclick='viewMonth(12);'>December</button>
+            <button onclick='viewMonth(1);'>January</button>
+            <button onclick='viewMonth(2);'>February</button>
+            <button onclick='viewMonth(3);'>March</button>
+            <button onclick='viewMonth(4);'>April</button>
+            <button onclick='viewMonth(5);'>May</button>
+            <button onclick='viewMonth(6);'>June</button>
+            {% for grouppack in grouppacks %}
+                <h4>{{ grouppack.group.letterCode }}, {{ grouppack.group.studyprogram.nameEnglish }}</h4>
+                <table class="table table-sm table-condensed table-striped">
+                    <thead>
+                    <tr style='font-size:11px;'><th>No</th><th>Subgroup</th><th>Id</th><th>Name</th>
+                            {% set CourseDayNumber=1 %}
+                            {% set today_class='everyday_class' %}
+                            {% for courseDay in grouppack.coursedays %}
+                                {% set tooltip='' %}
+                                {% if(courseDay.date|date('Y-m-d')==today) %} 
+                                    {% set today_class='today_class' %}
+                                    {% set today_session=courseDay.session %}
+                                    {% set today_type=courseDay.classTypeId %}
+                                {% else %}
+                                    {% set today_class='everyday_class' %}
+                                {% endif %}
+                                {% if courseDay.changed==true %}
+                                    {% set today_class='changed_class' %}
+                                {% endif %}
+                                {% if courseDay.holiday is not null %}
+                                    {% set today_class='freeday_class' %}
+                                {% endif %}
+                                {% if courseDay.coverday is not null %}
+                                    {% set today_class='coverday_class' %}
+                                    {% set tooltip='Replacing: '~courseDay.coverdayTitle %}
+                                {% endif %}
+                            <th class="{{ today_class }}" title='{{ tooltip }}'>
+                                {% if courseDay.changed==false %}
+                                    {{ CourseDayNumber }}
+                                    {% set CourseDayNumber=CourseDayNumber+1 %}
+                                {% endif %}<br>
+                                {#{{ courseDay.classNumber }}<br>#}
+                                {{ courseDay.classType }}<br>
+                                {{ courseDay.session }}<br>
+                                {{ courseDay.date|date('d-M') }}<br>
+                                {{ courseDay.date|date('D') }}<br>
+                                {% if courseDay.holiday is not null %}
+                                    {# today_class #}
+                                {% endif %}
+                                {% if(courseDay.locked==true) %}
+                                    <img src='/build/images/attendance_lock_icon.png'>
+                                {% endif %}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% set StudentNumber=1 %}
+                    {% for student in grouppack.group.students %}
+                        <tr style='font-size:11px;'>
+                            <td>{{ StudentNumber }}</td>
+                            <td>{{ student.subgroupletter }}</td>
+                            <td>{{ student.systemId }}</td>
+                            <td>{{ student.lastnameTurkmen }} {{ student.firstnameTurkmen }}</td>
+                            {% set StudentNumber=StudentNumber+1 %}
+                            {% set CourseDayNumber=0 %}
+                            {% for courseDay in grouppack.coursedays %}
+                                {% set CourseDayNumber=CourseDayNumber+1 %}
+                                {% if(courseDay.locked == true or courseDay.date > todayDate) %}
+                                    {% set button_status = 'disabled' %}
+                                {% else %}
+                                    {% set button_status = '' %}
+                                {% endif %}
+                                <td>
+                                    {% if courseDay.holiday is null and courseDay.changed==false %}
+                                        <div class="dropdown" id="attendance{{student.id}}_{{CourseDayNumber}}">
+                                            <button class="btn btn-sm" style="margin:0px;padding:0px;" type="button" data-toggle="dropdown" {{ button_status }}>
+                                                {% set absenceNote = '' %}
+                                                {% set absenceId = 0 %}
+                                                {% set absenceExcuseNote = '' %}
+                                                {% set absenceRecoverNote = '' %}
+                                                {% if student.studentabsences.count>0 %}
+                                                    {% set absenceFound = false %}
+                                                    {% for absence in student.studentabsences if(absence.session==courseDay.session and absence.date==courseDay.date and courseDay.course==absence.course)  %}
+                                                        {% set absenceFound = true %}
+                                                        {% set absenceNote = absence.note %}
+                                                        {% set absenceId = absence.id %}
+                                                        {% set absenceExcuseNote = absence.excusenote %}
+                                                        {% set absenceRecoverNote = absence.recovernote %}
+                                                        <span id="data{{student.id}}_{{CourseDayNumber}}" data-absence='{"id":"{{ absence.id }}", "note":"{{ absence.note }}", "excusenote":"{{ absence.excusenote }}", "recovernote":"{{ absence.recovernote }}", "student_id":"{{ student.id }}", "course_id":"{{ course.id }}", "teacher_id":"{{ course.teacher.id }}", "date":"{{ courseDay.date|date('Y-m-d') }}", "session":"{{ courseDay.session }}", "status":"{{ absence.status }}", "excusestatus":"{{ absence.excusestatus }}", "type":"{{ courseDay.classTypeId }}"}'>
+                                                            {% if absence.status==0 or absence.status==3 %}
+                                                                <img src='/build/images/attendance_cross_icon.png'></span>
+                                                            {% endif %}
+                                                            {% if absence.status==1 %}
+                                                            <img src='/build/images/attendance_recovert_icon.png'></span>
+                                                        {% endif %}
+                                                        {% if absence.status==2 %}
+                                                            <img src='/build/images/attendance_recover_icon.png'></span>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                    {% if absenceFound == false %}
+                                                        <span id="data{{student.id}}_{{CourseDayNumber}}" data-absence='{"id":"0", "note":"", "student_id":"{{ student.id }}", "course_id":"{{ course.id }}", "teacher_id":"{{ course.teacher.id }}", "date":"{{ courseDay.date|date('Y-m-d') }}", "session":"{{ courseDay.session }}", "status":"0", "excusestatus":"0", "type":"{{ courseDay.classTypeId }}"}'>
+                                                            <img src='/build/images/attendance_check_icon.png'></span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                    <span id="data{{student.id}}_{{CourseDayNumber}}" data-absence='{"id":"0", "note":"", "student_id":"{{ student.id }}", "course_id":"{{ course.id }}", "teacher_id":"{{ course.teacher.id }}", "date":"{{ courseDay.date|date('Y-m-d') }}", "session":"{{ courseDay.session }}", "status":"0", "excusestatus":"0", "type":"{{ courseDay.classTypeId }}"}'>
+                                                        <img src='/build/images/attendance_check_icon.png'></span>
+                                                    {% endif %}
+                                            </button><span class='extrasmall' id="info{{student.id}}_{{CourseDayNumber}}">
+                                                {% if absenceNote|length>0 %}
+                                                    <br>{{ absenceNote }}
+                                                {% endif %}
+                                                {% if absenceExcuseNote|length>0 %}
+                                                    <br>{{ absenceExcuseNote }}
+                                                {% endif %}
+                                            </span>
+                                            <div class="dropdown-menu">
+                                                <div class="smallcourseinfo">
+                                                    {% if absenceId>0 %}
+                                                        Absence id: {{ absenceId }}<br>
+                                                    {% endif %}
+                                                    {{ courseDay.course.nameEnglish }} {{ courseDay.course.teacher.shortfullname }} Session:{{ courseDay.session }}<br>Student: {{ student.fullname }}
+                                                </div>
+                                                <a class="dropdown-item present" data-id="{{student.id}}_{{CourseDayNumber}}"><img src='/build/images/attendance_check_icon.png'> Present</a>
+                                                <a class="dropdown-item absent" data-id="{{student.id}}_{{CourseDayNumber}}"><img src='/build/images/attendance_cross_icon.png'> Absent</a>
+                                                <!--<a class="dropdown-item health" data-id="{{student.id}}_{{CourseDayNumber}}"><img src='/build/images/attendance_healthreport_icon.png'></a>-->
+                                                <a class="dropdown-item note" data-id="{{student.id}}_{{CourseDayNumber}}"><img src='/build/images/attendance_note_icon.png'> Note</a>
+                                                    {% if viewingTeacher.id==course.teacher.id %}
+                                                    <a class="dropdown-item recoverteacher" data-id="{{student.id}}_{{CourseDayNumber}}"><img src='/build/images/attendance_note_icon.png'> Recover (Instructor)</a>
+                                                    {% endif %}
+                                                    {% if is_granted("ROLE_DEAN") %}
+                                                    <a class="dropdown-item excuse" data-id="{{student.id}}_{{CourseDayNumber}}"><img src='/build/images/attendance_note_icon.png'> Excuse</a>
+                                                    <a class="dropdown-item unexcuse" data-id="{{student.id}}_{{CourseDayNumber}}"><img src='/build/images/attendance_note_icon.png'> Unexcuse</a>
+                                                    <a class="dropdown-item recoverdean" data-id="{{student.id}}_{{CourseDayNumber}}"><img src='/build/images/attendance_note_icon.png'> Recover (Dean)</a>
+                                                    {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endfor %}
+            {% set fieldtype='hidden' %}
+            <form id='mainform' name='mainform'>
+                <input type="{{ fieldtype }}" size=10 name='action' id='action' placeholder='action' value=''>
+                <input type="{{ fieldtype }}" size=10 name='div_id' id='div_id' placeholder='div_id' value=''>
+                <input type="{{ fieldtype }}" size=10 name='absence_id' id='absence_id' placeholder='absence_id' value=''>
+                <input type="{{ fieldtype }}" size=10 name='student_id' id='student_id' placeholder='student_id' value=''>
+                <input type="{{ fieldtype }}" size=10 name='course_id' id='course_id' placeholder='course_id' value=''>
+                <input type="{{ fieldtype }}" size=10 name='teacher_id' id='teacher_id' placeholder='teacher_id' value=''>
+                <input type="{{ fieldtype }}" size=10 name='absence_date' id='absence_date' placeholder='absence_date' value=''>
+                <input type="{{ fieldtype }}" size=10 name='absence_session' id='absence_session' placeholder='absence_session' value=''>
+                <input type="{{ fieldtype }}" size=10 name='absence_note' id='absence_note' placeholder='absence_note' value=''>
+                <input type="{{ fieldtype }}" size=10 name='absence_excusenote' id='absence_excusenote' placeholder='absence_excusenote' value=''>
+                <input type="{{ fieldtype }}" size=10 name='absence_recovernote' id='absence_recovernote' placeholder='absence_recovernote' value=''>
+                <input type="{{ fieldtype }}" size=10 name='absence_status' id='absence_status' placeholder='absence_status' value=''>
+                <input type="{{ fieldtype }}" size=10 name='absence_excusestatus' id='absence_excusestatus' placeholder='absence_excusestatus' value=''>
+                <input type="{{ fieldtype }}" size=10 name='absence_type' id='absence_type' placeholder='absence_type' value=''>
+            </form>
+            <div id='error'>
+            </div>
+            <div id='main'>
+            </div>
+            <button type="button" class="btn btn-primary" id="btnCourse" data-id="course">
+                <span id="datacourse" data-absence='{"id":"0", "note":"0", "student_id":"0", "course_id":"{{ course.id }}", "teacher_id":"{{ course.teacher.id }}", "date":"{{ today }}", "session":"{{ today_session }}", "status":"0", "type":"{{ today_type }}"}'>
+                    Submit attendance
+            </button><span class='extrasmall' style='margin:10px;' id="infocourse"></span><br><br>
+        </div>
+    {% endblock %}
+    {% block customjs %}
+        <script type="text/javascript">
+            var globalyear1 = {{ first_semester_year }};
+                    var globalyear2 = {{ first_semester_year+1 }};
+                    var globalsemester = {{ semester }};
+
+            $(document).ready(function () {
+                $("#begindatepicker").datepicker({dateFormat: "yy-mm-dd"});
+                $("#enddatepicker").datepicker({dateFormat: "yy-mm-dd"});
+
+                $('#btn_view_interval').click(function (e) {
+                    view_interval();
+                });
+                $('#btn_view_today').click(function (e) {
+                    view_today();
+                });
+                $('#btn_view_thisweek').click(function (e) {
+                    viewThisWeek();
+                });
+                $('#cbx_weeknumber').on('change', function () {
+                    viewNthWeek(this.value);
+                });
+
+                $('.dropdown-item.present').click(function (e) {
+                    send_attendance($(this).attr('data-id'), 'present');
+                });
+                $('.dropdown-item.absent').click(function (e) {
+                    send_attendance($(this).attr('data-id'), 'absent');
+                });
+                $('.dropdown-item.note').click(function (e) {
+                    send_attendance($(this).attr('data-id'), 'note');
+                });
+                $('#btnCourse').click(function (e) {
+                    send_attendance($(this).attr('data-id'), 'teacher');
+                });
+                $('.dropdown-item.excuse').click(function (e) {
+                    send_attendance($(this).attr('data-id'), 'excuse');
+                    $('#absence_excusestatus').val(1);
+                });
+                $('.dropdown-item.unexcuse').click(function (e) {
+                    send_attendance($(this).attr('data-id'), 'unexcuse');
+                    $('#absence_excusestatus').val(0);
+                });
+                $('.dropdown-item.recoverteacher').click(function (e) {
+                    send_attendance($(this).attr('data-id'), 'recoverteacher');
+                });
+                $('.dropdown-item.recoverdean').click(function (e) {
+                    send_attendance($(this).attr('data-id'), 'recoverdean');
+                });
+
+            });
+
+            function send_attendance(id, action)
+            {
+                //console.log(id);
+                var absence = $("#data" + id).data("absence");
+                //console.log(absence);
+
+                absence_note_new = absence.note;
+                absence_excusenote_new = absence.excusenote;
+                absence_recovernote_new = absence.recovernote;
+                if (action == "note")
+                {
+                    $('#action').val('note');
+                    var absence_note_input = prompt("Please enter note", absence.note);
+                    absence_note_new = absence_note_input;
+                }
+                if (action == "excuse")
+                {
+                    $('#action').val('excusenote');
+                    var absence_note_input = prompt("Please enter excuse note", absence.excusenote);
+                    absence_excusenote_new = absence_note_input;
+                }
+                if (action == "recoverdean")
+                {
+                    $('#action').val('recovernote');
+                    var absence_note_input = prompt("Please enter recover note", absence.recovernote);
+                    absence_recovernote_new = absence_note_input;
+                }
+
+                $('#action').val(action);
+                $('#div_id').val(id);
+                $('#absence_id').val(absence.id);
+                $('#student_id').val(absence.student_id);
+                $('#course_id').val(absence.course_id);
+                $('#teacher_id').val(absence.teacher_id);
+                $('#absence_date').val(absence.date);
+                $('#absence_session').val(absence.session);
+                $('#absence_note').val(absence_note_new);
+                $('#absence_excusenote').val(absence_excusenote_new);
+                $('#absence_recovernote').val(absence_recovernote_new);
+                $('#absence_status').val(absence.status);
+                $('#absence_type').val(absence.type);
+
+                send_data();
+                if (action == 'present')
+                    $("#data" + id).html("<img src='/build/images/attendance_check_icon.png'>");
+                else if (action == 'absent')
+                    $("#data" + id).html("<img src='/build/images/attendance_cross_icon.png'>");
+            }
+
+            function view_interval()
+            {
+                window.location.href = '/faculty/attendancejournal/course/' +      {{ course.id }} +"/" + $("#begindatepicker").val() + "/" + $("#enddatepicker").val();
+            }
+
+            function view_today()
+            {
+                var beginDate = new Date();
+                var endDate = dateAdd(beginDate, 'day', 1);
+                $("#begindatepicker").datepicker("setDate", beginDate);
+                //console.log(beginDate);
+                //console.log(endDate);
+                $("#enddatepicker").datepicker("setDate", endDate);
+                view_interval();
+            }
+
+            function viewMonth(month)
+            {
+                var date = new Date();
+                year1 = globalyear1;
+                year2 = globalyear2;
+                month1 = month - 1;
+                month2 = month;
+                if (month > 8 && month < 12)
+                {
+                    year1 = globalyear1;
+                    year2 = globalyear1;
+                } else if (month == 12)
+                {
+                    year1 = globalyear1;
+                    year2 = globalyear2;
+                    month2 = 0;
+                } else if(month>=1 && month<=8)
+                {
+                    year1 = globalyear2;
+                    year2 = globalyear2;
+                }
+                else {
+                    year2 = year1;
+                }
+
+                var beginDate = new Date(year1, month1, 1);
+                var endDate = new Date(year2, month2, 1);
+
+                //var endDate = dateAdd(beginDate, 'day', 1);
+                $("#begindatepicker").datepicker("setDate", beginDate);
+                $("#enddatepicker").datepicker("setDate", endDate);
+                view_interval();
+            }
+
+            function viewThisWeek()
+            {
+                var curr = new Date; // get current date
+                var first = curr.getDate() - curr.getDay() + 1; // First day is the day of the month - the day of the week
+                var last = first + 6; // last day is the first day + 6
+
+                var beginDate = new Date(curr.setDate(first));
+                var endDate = new Date(curr.setDate(last));
+                $("#begindatepicker").datepicker("setDate", beginDate);
+                $("#enddatepicker").datepicker("setDate", endDate);
+                view_interval();
+            }
+
+            function viewNthWeek(i)
+            {
+                var zeroBeginDate;
+                if (globalsemester == 1) {
+                    zeroBeginDate = new Date(globalyear1, 8, 1); // get September 1
+                } else {
+                    zeroBeginDate = new Date(globalyear2, 1, 2); // get February 1
+                }
+                var beginDate = dateAdd(zeroBeginDate, 'day', 7 * (i - 1));
+                var endDate = dateAdd(zeroBeginDate, 'day', 7 * i);
+                $("#begindatepicker").datepicker("setDate", beginDate);
+                $("#enddatepicker").datepicker("setDate", endDate);
+                view_interval();
+            }
+
+            function send_data()
+            {
+                p = '/faculty/attendance/process';
+                var inputs = $("#mainform").serialize();
+                //console.log(inputs);
+                //return;
+                $.ajax({
+                    type: "POST",
+                    url: p,
+                    data: inputs,
+                    success: function (msg) {
+                        //console.log(msg);
+                        $("#info" + $('#div_id').val()).html(msg);
+                    },
+                    error: function (request, status, error) {
+//                    console.log(request.responseText);
+                        $('#infocourse').html(request.responseText);
+                    }
+                });
+            }
+
+            function dateAdd(date, interval, units) {
+                if (!(date instanceof Date))
+                    return undefined;
+                var ret = new Date(date); //don't change original date
+                var checkRollover = function () {
+                    if (ret.getDate() != date.getDate())
+                        ret.setDate(0);
+                };
+                switch (String(interval).toLowerCase()) {
+                    case 'year'   :
+                        ret.setFullYear(ret.getFullYear() + units);
+                        checkRollover();
+                        break;
+                    case 'quarter':
+                        ret.setMonth(ret.getMonth() + 3 * units);
+                        checkRollover();
+                        break;
+                    case 'month'  :
+                        ret.setMonth(ret.getMonth() + units);
+                        checkRollover();
+                        break;
+                    case 'week'   :
+                        ret.setDate(ret.getDate() + 7 * units);
+                        break;
+                    case 'day'    :
+                        ret.setDate(ret.getDate() + units);
+                        break;
+                    case 'hour'   :
+                        ret.setTime(ret.getTime() + units * 3600000);
+                        break;
+                    case 'minute' :
+                        ret.setTime(ret.getTime() + units * 60000);
+                        break;
+                    case 'second' :
+                        ret.setTime(ret.getTime() + units * 1000);
+                        break;
+                    default       :
+                        ret = undefined;
+                        break;
+                }
+                return ret;
+            }
+        </script>
+    {% endblock %}

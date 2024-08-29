@@ -1,0 +1,182 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+        .eventrow {border-bottom:1px solid gray; font-size:10px;}
+        .eventcol {break:none; display: inline-block; padding:10px;}
+        .entity {border-radius: 50%; height:40px;}
+    </style>
+{% endblock %}
+{% block moduletitle %}System Monitor{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div style="margin:auto;">
+        <h3>System Monitor</h3>
+        <p><div>From: <input type="text" id="begindatepicker" size="15" value="{{ "now" | date("Y-m-d") }}"> 
+            To:<input type="text" id="enddatepicker" size="15" value="{{ "now" | date("Y-m-d") }}"> <button id="btn_view_interval">View</button>
+            <button id="btn_view_today">Today</button> <button id="btn_pull_events">Pull events</button> 
+            Last update: <span id="lastPullRequestTime"></span>
+            <form name="mainform" id="mainform"><input type="hidden" id="lastUpdateTime" size="15" value="{{ "now"|date("Y-m-d H:i:s") }}"></form>
+            <div id="events">
+            </div>
+            {{ content|raw }}
+        </div>
+    {% endblock %}
+    {% block customjs %}
+        <script type="text/javascript">
+            var updateInterval = null;
+            var events = new Array();
+            $(document).ready(function () {
+                $("#begindatepicker").datepicker({dateFormat: "yy-mm-dd"});
+                $("#enddatepicker").datepicker({dateFormat: "yy-mm-dd"});
+                $("#lastUpdateTime").datepicker({dateFormat: "yy-mm-dd"});
+                $('#btn_view_interval').click(function (e) {
+                    view_interval();
+                });
+                $('#btn_view_today').click(function (e) {
+                    view_today();
+                });
+                $('#btn_pull_events').click(function (e) {
+                    pullEvents();
+                });
+                updateInterval = setInterval(function () {
+                    pullEvents();
+                }, 60000);
+            });
+
+            function pullEvents()
+            {
+                $("#lastPullRequestTime").html(nowTime());
+                send_data();
+            }
+
+            function view_interval()
+            {
+                window.location.href = "/system/systemevent/getinterval/" + $("#begindatepicker").val() + "/" + $("#enddatepicker").val();
+            }
+
+            function view_today()
+            {
+                var date = new Date();
+                date.setDate(date.getDate() - 1);
+
+                hours = date.getUTCHours();
+                minutes = date.getUTCMinutes();
+                seconds = date.getSeconds();
+
+                timeString = hours.toString().padStart(2, '0') + ':' +
+                        minutes.toString().padStart(2, '0') + ':' +
+                        seconds.toString().padStart(2, '0');
+                $("#lastUpdateTime").datepicker("setDate", date);
+                $("#lastUpdateTime").val($("#lastUpdateTime").val() + ' ' + timeString);
+                pullEvents();
+            }
+
+            function nowTime()
+            {
+                var date = new Date();
+                hours = date.getUTCHours();
+                minutes = date.getUTCMinutes();
+                seconds = date.getSeconds();
+
+                timeString = hours.toString().padStart(2, '0') + ':' +
+                        minutes.toString().padStart(2, '0') + ':' +
+                        seconds.toString().padStart(2, '0');
+
+                return timeString;
+            }
+
+            function send_data()
+            {
+                p = '/system/systemevent/after/' + $("#lastUpdateTime").val();
+                //console.log(p);
+                var inputs = $("#mainform").serialize();
+                //console.log(inputs);
+                //return;
+                $.ajax({
+                    type: "POST",
+                    url: p,
+                    data: inputs,
+                    success: function (msg) {
+                        //console.log(msg);
+                        processEvent(msg);
+                    }});
+            }
+
+            function processEvent(data)
+            {
+                lastEventsHtml = '';
+                eventsJson = data;
+                for (var i = 0; i < eventsJson.length; i++)
+                {
+                    event = eventsJson[i];
+                    events.push(event);
+                    lastEventsHtml += "<div class='eventrow'>";
+                    lastEventsHtml += "<div class='eventcol'>" + event.id + "</div>";
+                    lastEventsHtml += "<div class='eventcol'>" + eventTypes[event.type] + "</div>";
+                    lastEventsHtml += "<div class='eventcol'><img class='entity' src='/system/getimage/" + entityTypes[event.subject_type] + "/"+event.subject_data2+"'></div>";
+                    lastEventsHtml += "<div class='eventcol'>" + entityTypes[event.subject_type] + "</div>";
+                    lastEventsHtml += "<div class='eventcol'>" + entityTypes[event.object_type] + "</div>";
+                    lastEventsHtml += "<div class='eventcol'>" + event.subject_data + "</div>";
+                    lastEventsHtml += "<div class='eventcol'>" + event.subject_data2 + "</div>";
+                    lastEventsHtml += "<div class='eventcol'>" + event.object_data + "</div>";
+                    lastEventsHtml += "<div class='eventcol'>" + event.object_data2 + "</div>";
+                    lastEventsHtml += "<div class='eventcol'>" + event.data + "</div>";
+                    lastEventsHtml += "<div class='eventcol'>" + event.date + "</div>";
+                    lastEventsHtml += "</div>";
+                }
+                if (eventsJson.length > 0)
+                {
+                    $("#lastUpdateTime").val(eventsJson[0].date);
+                }
+                $("#events").prepend(lastEventsHtml);
+            }
+
+            function getEventTypeName(intType)
+            {
+                return eventTypes[intType];
+            }
+
+            var eventTypes = new Array()
+            eventTypes.push("NULL");
+            eventTypes.push("CREATE");
+            eventTypes.push("UPDATE");
+            eventTypes.push("DELETE");
+            eventTypes.push("VIEW");
+            eventTypes.push("LOGIN");
+            eventTypes.push("LOGOUT");
+            eventTypes.push("ENABLE");
+            eventTypes.push("DISABLE");
+            eventTypes.push("SHOW");
+            eventTypes.push("HIDE");
+            eventTypes.push("LOGINFAIL");
+
+            var entityTypes = new Array();
+            //entityTypes.push()
+            entityTypes.push("NULL");
+            entityTypes.push("USER");
+            entityTypes.push("TEACHER");
+            entityTypes.push("FACULTY");
+            entityTypes.push("DEPARTMENT");
+            entityTypes.push("GROUP");
+            entityTypes.push("ENROLLEDSTUDENT");
+            entityTypes.push("EXPELLEDSTUDENT");
+            entityTypes.push("ALUMNUSSTUDENT");
+            entityTypes.push("STUDYPROGRAM");
+            entityTypes.push("PROGRAMCOURSE");
+            entityTypes.push("EMPLOYEE");
+            entityTypes.push("TAUGHTCOURSE");
+            entityTypes.push("SCHEDULEITEM");
+            entityTypes.push("SCHEDULE");
+            entityTypes.push("STUDENTABSENCE");
+            entityTypes.push("TEACHERATTENDANCE");
+            entityTypes.push("CLASSROOM");
+            entityTypes.push("MOVEMENT");
+            entityTypes.push("LIBRARYITEM");
+            entityTypes.push("TEACHERWORKITEM");
+            entityTypes.push("DEPARTMENTWORKITEM");
+        </script>
+    {% endblock %}

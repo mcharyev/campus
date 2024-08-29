@@ -1,0 +1,40 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+    </style>
+{% endblock %}
+{% block moduletitle %}Teacher Attendance{% endblock %}
+{% block main %}
+    <h4>{{ report_title }}: {{ today|date('d.m.Y') }}</h4>
+    {% set itemNumber = 0 %}
+    <table class="table table-bordered table-sm table-compact table-striped">
+        <tr><th>#</th><th>Course</th><th>Teacher</th><th>Submitted date</th><th>Teacher Department</th>
+            <th>Groups</th><th>Day</th><th>Session</th></tr>
+                {% for item in scheduleItems %}
+                    {% set itemNumber = itemNumber + 1 %}
+            <tr>
+                <td>{{ itemNumber }}</td>
+                <td><a href='/faculty/attendance/course/{{ item.scheduleItem.taughtcourse.id }}'>{{ item.scheduleItem.taughtcourse.notecoursename }}</a></td>
+                <td>{{ item.scheduleItem.teacher.shortfullname }}</td>
+                <td>
+                    {% if item.teacherAttendance is not null %}
+                        {{ item.teacherAttendance.date|date('d.m.Y') }}
+                    {% endif %}
+                </td>
+                <td>{{ item.scheduleItem.teacher.department.nameEnglish }}</td>
+                <td>{{ item.scheduleItem.studentGroups }}</td>
+                <td>{{ item.scheduleItem.day }}</td>
+                <td>{{ item.scheduleItem.session }}</td>
+
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {});
+    </script>
+{% endblock %}

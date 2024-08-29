@@ -1,0 +1,56 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Competition{% endblock %}
+{% block customcss %}
+    <style>
+        .verticaltext {
+            -webkit-transform: rotate(-90deg);
+            text-align: center;
+            vertical-align: middle;
+        }
+        .itemrow {font-size:12px;}
+        .boldtext {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block main %}
+    <div style="margin:auto;"><h3></h3></div>
+    <div style="margin:auto;">
+        <table class="table table-sm table-bordered">
+            <tr><td colspan="10" class='boldtext'><h7>{{ competition.nameTurkmen }}</h7></td></tr>
+            <tr class="itemrow">
+                <td>1</td>
+                <td>2</td>
+                <td>3</td>
+                <td>2</td>
+                <td>3</td>
+            </tr>
+            {% set diplomaLevels = ['', '1-nji derejeli diplom', '2-nji derejeli diplom', '3-nji derejeli diplom'] %}
+            {% set medalLevels = ['', 'Altyn medal', 'Kümüş medal', 'Bürünç medal'] %}
+            {% for result in competition.competitionResults %}
+                <tr>
+                    <td class="itemrow">{{ loop.index }}</td>
+                    <td class="itemrow">{{ result.person }} <a href='/faculty/competitionresult/editincompetition/{{ result.id }}/{{ competition.id }}'>Edit</a></td>
+                    <td class="itemrow">{{ result.data['major'] }} hünäriniň {{ result.data['year'] }}-nji ýyl talyby</td>
+                    <td class="itemrow">{{ competition.nameTurkmen }}</td>
+                    <td class="itemrow">
+                        {% if result.awardtype==1 %}
+                            {{ medalLevels[result.resultlevel] }}
+                        {% elseif result.awardtype==2 %}
+                            {{ diplomaLevels[result.resultlevel] }}
+                        {% endif %}
+                    </td>
+                    <td class="itemrow">{{ competition.startdate|date('d.m.Y') }} - {{ competition.enddate|date('d.m.Y') }}</td>
+                    <td class="itemrow">{{ result.data['advisor'] }}</td>
+                    <td class="itemrow">{{ result.data['advisorposition'] }}</td>
+                </tr>
+            {%  endfor %}
+            <tr><td class="itemrow" colspan="10"><a href='/faculty/competitionresult/editincompetition/0/{{ competition.id }}'>Add result</a></td></tr>
+        </table>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+        });
+    </script>
+{% endblock %}{# empty Twig template #}

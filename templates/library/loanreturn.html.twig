@@ -1,0 +1,332 @@
+{% extends 'library.html.twig' %}
+
+{% block moduletitle %}Library Item{% endblock %}
+{% block customcss %}
+    <style>
+        #mainpanel { width:95%; margin:auto;}
+        #user_info {font-size: 30px;text-align:center;padding:10px;width:100%;margin:auto;}
+        .textbox
+        {
+            font-size:20px;
+            border-radius:0px;
+        }
+        .userphoto {border: 1px solid black;}
+        .text-big {font-size:20px;}
+        .items_header {background-color: #cecece; font-weight: bold;}
+        .status0 {color:red; font-weight:bold;}
+        .status1 {color:green; font-weight:bold;}
+    </style>
+{% endblock %}
+{% block main %}
+    <h3 style='text-align:center;'>IUHD - {{ libraryUnit.nameEnglish }} - Loan / Return </h3><br>
+    <div id='mainpanel'>
+        <form name="main" id="main" method="post">
+            <table width='100%' border='0' cellspacing=0 cellpadding=5 style='border:0px solid black;'>
+                <tr>
+                    <td align='center' valign='top' style='border-right:1px solid black;'>
+                        <span class="text-big">Reader:</span>
+                        <input type="text" size=23 name="user_number" id="user_number" value="" class="textbox" autocomplete="off"><br><br>
+                        <span class="text-big">Search:</span>
+                        <input type="text" size=23 name="user_search" id="user_search" value="" class="textbox" autocomplete="off"><br>
+                    </td>
+                    <td align='left' style='padding-left:25px;'>
+                        <span class="text-big">&nbsp;&nbsp;&nbsp;&nbsp;Item:</span>
+                        <input type="text" size=23 name="item_callnumber" id="item_callnumber" value="" class="textbox" autocomplete="off"><br><br>
+                        <span class="text-big">Search:</span>
+                        <input type="text" size=23 name="item_search" id="item_search" value="" class="textbox" autocomplete="off"><br>
+                    </td>
+                <tr valign='top'>
+                    <td align='center' style='border-right:1px solid black;text-align:' width='50%'>
+                        <div id='user_info'></div>
+                    </td>
+                    <td width='50%'>
+                        <div id='item_info'></div>
+                    </td>
+                </tr>
+                <tr><td colspan='2'><div id='items_list'></div></td></tr>
+                <tr><td colspan='2'><div id='loan_info'></div></td></tr>
+                <tr><td colspan='2'>
+                        <input type="hidden" name="action" id="action" value="entry">
+                        <input type="hidden" name="loan_userid" id="loan_userid">
+                        <input type="hidden" name="loan_usernumber" id="loan_usernumber">
+                        <input type="hidden" name="loan_itemcallnumber" id="loan_itemcallnumber">
+                        <input type="hidden" name="loan_type" id="loan_type">
+                        <input type="hidden" name="loan_username" id="loan_username">
+                        <input type="hidden" name="loan_authorid" id="loan_authorid" value="{{ app.user.id }}"></td></tr>
+                <!--<tr><td colspan=2><input type="reset" value="Täzeden"> <input type="submit" value="Iber"></td></tr>-->
+            </table>
+        </form>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        var items = new Array();
+
+        $(document).ready(function () {
+            $("#add").click(function () {
+                $('#action').val('add');
+                send_data();
+            });
+            $("#update").click(function () {
+                $('#action').val('update');
+                send_data();
+            });
+            $("#user_number").keyup(function (event) {
+                search_user(event);
+            });
+            $("#user_number").focus(function (event) {
+                $("#user_number").val('');
+            });
+            $("#item_callnumber").keyup(function (event) {
+                search_item(event);
+            });
+            $("#item_callnumber").focus(function (event) {
+                $("#item_number").val('');
+                $("#item_callnumber").val('');
+            });
+            $('#main').on('keyup keypress', function (e) {
+                var keyCode = e.keyCode || e.which;
+                if (keyCode === 13) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            autocompleting();
+        });
+
+        var items = Array();
+        function autocompleting()
+        {
+            $("#user_search").autocomplete({
+                minLength: 3,
+                source: function (request, response) {
+                    $.ajax({
+                        url: "/library/user/jsonlist/" + request.term,
+                        dataType: "json",
+                        success: function (data) {
+                            response(data);
+                        }
+                    });
+                },
+                focus: function (event, ui) {
+                    //$( "#taught_course_form_student_groups_select" ).val( ui.item.value );
+                    return false;
+                },
+                select: function (event, ui) {
+                    add_item(ui.item.id, ui.item.value, 'user');
+
+                    return false;
+                }
+            })
+                    .autocomplete("instance")._renderItem = function (ul, item) {
+                return $("<li>")
+                        .append("<div style='50px; margin-top:5px;'>" + item.value + "</div>")
+                        .appendTo(ul);
+            };
+
+            $("#item_search").autocomplete({
+                minLength: 3,
+                source: function (request, response) {
+                    $.ajax({
+                        url: "/library/item/jsonlist/" + request.term,
+                        dataType: "json",
+                        success: function (data) {
+                            response(data);
+                        }
+                    });
+                },
+                focus: function (event, ui) {
+                    //$( "#taught_course_form_student_groups_select" ).val( ui.item.value );
+                    return false;
+                },
+                select: function (event, ui) {
+                    add_item(ui.item.id, ui.item.value, 'item');
+
+                    return false;
+                }
+            })
+                    .autocomplete("instance")._renderItem = function (ul, item) {
+                return $("<li>")
+                        .append("<div style='50px; margin-top:5px;'>" + item.value + "</div>")
+                        .appendTo(ul);
+            };
+        }
+
+        function add_item(id, name, searchtype)
+        {
+            var ev = {which: 13};
+            if (searchtype == 'user')
+            {
+                $("#user_number").val(id);
+                search_user(ev);
+            } else
+            {
+                $("#item_callnumber").val(id);
+                search_item(ev);
+            }
+        }
+
+        function remove_item(index)
+        {
+            items.splice(index, 1);
+        }
+
+        function search_user(event)
+        {
+            if (event.which == 13)
+            {
+                var user_number = $("#user_number").val().replace('IUHD','');
+                $("#loan_usernumber").val(user_number);
+                $("#user_number").val(user_number);
+                $("#action").val('searchuser');
+                send_data();
+                //$("#user_number").val('');
+                return;
+            }
+        }
+
+        function search_item(event)
+        {
+            if (event.which == 13)
+            {
+                $("#loan_itemcallnumber").val($("#item_callnumber").val());
+                $("#action").val('searchitem');
+
+                var inputs = $("#main").serialize();
+                $('#item_info').html("Sending. Please wait...");
+                $.ajax({
+                    url: '/library/libraryitem/loanreturn/searchitem',
+                    type: 'POST',
+                    data: inputs,
+                    success: function (data) {
+                        $('#item_info').html(data);
+                        //$("#item_callnumber").val('');
+                    },
+                    error: function (request, status, error) {
+                        $('#item_info').html(request.responseText);
+                    }
+                });
+
+            }
+            $('#loan_info').html("");
+        }
+
+        function send_data()
+        {
+            var inputs = $("#main").serialize();
+            console.log(inputs);
+            $('#user_info').html("Sending. Please wait...");
+            $.ajax({
+                url: '/library/libraryitem/loanreturn/' + $("#action").val(),
+                type: 'POST',
+                data: inputs,
+                success: function (data) {
+                    $('#user_info').html(data);
+
+                },
+                error: function (request, status, error) {
+                    $('#user_info').html(request.responseText);
+                }
+            });
+        }
+
+        function setuser(data)
+        {
+            $("#loan_username").val(data[0]);
+            $("#loan_usernumber").val(data[1]);
+            items = new Array();
+            clearfields();
+        }
+
+        function additem(data)
+        {
+            //console.log(item_exists(data[1]));
+            if (item_exists(data[1]))
+                return 0;
+            items.push(data);
+            load_items();
+        }
+
+        function load_items()
+        {
+            if (items.length > 0)
+            {
+                var items_str = "<table width='95%' border='0' cellpadding=5>";
+                items_str += "<tr class='items_header'><td>Loan to</td><td>Item Call Number</td><td>Item Title</td><td>Item Author</td><td>Actions</td></tr>";
+                for (i = 0; i < items.length; i++)
+                {
+                    items_str += "<tr>";
+                    items_str += "<td>" + $("#loan_username").val() + "</td><td>" + items[i][1] + "</td><td>" + items[i][2] + "</td><td>" + items[i][3] + "</td>";
+                    //console.log($("#loan_username").val());
+                    if ($("#loan_username").val() != '')
+                    {
+                        console.log(items[i][0]);
+                        if (items[i][0] == 1)
+                        {
+                            items_str += "<td><input type='button' onclick=\"javascript:loan_item(0,'" + $("#loan_usernumber").val() + "','" + items[i][1] + "');\" value='LOAN'></td>";
+                        } else
+                        {
+                            items_str += "<td><input type='button' onclick=\"javascript:loan_item(1,'" + $("#loan_usernumber").val() + "','" + items[i][1] + "');\" value='RETURN'></td>";
+                        }
+                    } else
+                    {
+                        items_str += "<td></td>";
+                    }
+                    items_str += "</tr>";
+                }
+                items_str += '</table>';
+            }
+            $('#items_list').html(items_str);
+        }
+
+        function loan_item(type, loan_usernumber, loan_itemcallnumber)
+        {
+            $("#loan_itemcallnumber").val(loan_itemcallnumber);
+            $("#action").val('loanitem');
+            if (type == 1)
+                $("#action").val('returnitem');
+            var inputs = $("#main").serialize();
+            console.log(inputs);
+            $('#loan_info').html("Sending. Please wait...");
+            $.ajax({
+                url: '/library/libraryitem/loanreturn/' + $("#action").val(),
+                type: 'POST',
+                data: inputs,
+                success: function (data) {
+                    //console.log(data);
+                    $('#loan_info').html(data);
+                },
+                error: function (data) {
+                }
+            });
+            items = new Array();
+        }
+
+        function clearfields()
+        {
+            $('#loan_info').html('');
+            $('#items_list').html('');
+        }
+
+        function item_exists(item)
+        {
+            var found = false;
+            for (i = 0; i < items.length; i++)
+            {
+                if (items[i][1] == item) {
+                    found = true;
+                    //console.log('found');
+                    break;
+                }
+            }
+            return found;
+        }
+
+        function showerror(str)
+        {
+            $('#status').html(str);
+        }
+
+
+    </script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'anonymousbase.html.twig' %}
+{% block navbar %}
+    <nav class="navbar navbar-expand-md navbar-light fixed-top" style="background-color: #28ad4b; color:#ffffff;">
+        <!--<a class="navbar-brand" href="#">CAMPUS</a>-->
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/publiclibrary/informationView/{{ libraryUnit.id }}/library_home_{{ libraryUnit.id }}">Home <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/publiclibrary/{{ libraryUnit.id }}">Library collection </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/publiclibrary/electronic/{{ libraryUnit.id }}">E-Library collection </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/publiclibrary/informationView/{{ libraryUnit.id }}/library_about_{{ libraryUnit.id }}">About Library</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/publiclibrary/informationView/{{ libraryUnit.id }}/library_regulations_{{ libraryUnit.id }}">Library regulations</a>
+                </li>
+                {% if is_granted('ROLE_USER') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout" >Logout</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login" >Login</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+{% endblock %}
+{% block moduletitle %} Main Library{% endblock %}
+{% block customcss %}
+{% endblock %}
+{% block main %}
+{% endblock %}
+{% block customjs %}
+{% endblock %}

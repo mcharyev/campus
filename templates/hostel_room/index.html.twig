@@ -1,0 +1,187 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %} Hostel Rooms{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='room_number'>Number</option>
+                <option value='room_name'>Name</option>
+                <option value='id'>ID</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form> <a href="/faculty/hostelroom/new">New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            row_count = 0;
+            $('#main').jtable({
+                title: 'Hostel Rooms',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'hostelroom.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/faculty/hostelroom/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        //console.log(jtParams.jtSorting);
+                                        $dfd.resolve(data);
+                                        row_count = 0;
+                                    },
+                                    error: function (request, status, error) {
+                                        console.log(request.responseText);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        createAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/faculty/hostelroom/create',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (request, status, error) {
+                                        console.log(request.responseText);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        updateAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/faculty/hostelroom/update',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        //console.log(postData);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (request, status, error) {
+                                        console.log(request.responseText);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        /*
+                         deleteAction: function (postData) {
+                         return $.Deferred(function ($dfd) {
+                         $.ajax({
+                         url: '/faculty/hostelroom/delete',
+                         type: 'POST',
+                         dataType: 'json',
+                         data: postData,
+                         success: function (data) {
+                         console.log(data);
+                         $dfd.resolve(data);
+                         },
+                         error: function (data) {
+                         $dfd.reject();
+                         }
+                         });
+                         });
+                         }*/
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'No',
+                            create: false,
+                            edit: false,
+                            width: '3%'
+                        },
+                        id: {
+                            title: 'ID',
+                            width: '3%',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            list: true
+                        },
+                        hostel_id: {
+                            title: 'Hostel',
+                            options: '/valuepairs/hostel/id/name_english/id ASC',
+                            width: '10%',
+                            list: true
+                        },
+                        floor: {
+                            title: 'Floor',
+                            type: 'text',
+                            width: '5%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        room_name: {
+                            title: 'Room Name',
+                            type: 'text',
+                            width: '10%',
+                            defaultValue: '',
+                            list: true
+                        },
+                        room_number: {
+                            title: 'Room Number',
+                            type: 'text',
+                            width: '10%',
+                            defaultValue: '',
+                            list: true
+                        },
+                        instructor_id: {
+                            title: 'Supervising Instructor',
+                            options: '/valuepairs/teacher/id/lastname,firstname/lastname ASC',
+                            width: '7%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        actions: {
+                            title: 'Actions',
+                            sorting: false,
+                            list: true,
+                            edit: false,
+                            create: false,
+                            display: function (data)
+                            {
+                                info = "<a href='/faculty/hostelroom/edit/" + data.record.id + "'>Edit</a>";
+                                info += "";
+                                return info;
+                            }
+
+                        }
+                    }
+                });
+                $('#main').jtable('load');
+            });
+            function search()
+            {
+                window.location.href = "/faculty/hostelroom/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+    </script>
+{% endblock %}

@@ -1,0 +1,280 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .small {font-size:12px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+        .bold {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Attendance{% endblock %}
+{% block main %}
+    <h4>{{ report_title }}</h4>
+    {% if faculty is not null %}
+        <h6><span class='bold'>Faculty:</span> <a href='/faculty/attendance/faculty/{{ faculty.id }}'>{{ faculty.nameEnglish }}</a></h6>
+        <h6><span class='bold'>Dean:</span> {{ faculty.dean.fullname }}</h6>
+    {% endif %}
+    {% if department is not null %}
+        <h6><span class='bold'>Department: </span><a href='/faculty/attendance/department/{{ department.id }}'>{{ department.nameEnglish }}</a></h6>
+        <h6><span class='bold'>Department Head:</span> {{ department.departmenthead.fullname }}</h6>
+    {% endif %}
+    {% if advisor is not null %}
+        <h6><span class='bold'>Advisor: </span>{{ advisor.fullname }}</h6>
+    {% endif %}
+    <button onclick='downloadReferrals()'>Download referrals</button><p>
+        {% set fieldtype='hidden' %}
+    <form id='mainform' name='mainform'>
+        <input type="{{ fieldtype }}" size=10 name='action' id='action' placeholder='action' value=''>
+        <input type="{{ fieldtype }}" size=10 name='div_id' id='div_id' placeholder='div_id' value=''>
+        <input type="{{ fieldtype }}" size=10 name='absence_id' id='absence_id' placeholder='absence_id' value=''>
+        <input type="{{ fieldtype }}" size=10 name='student_id' id='student_id' placeholder='student_id' value=''>
+        <input type="{{ fieldtype }}" size=10 name='course_id' id='course_id' placeholder='course_id' value=''>
+        <input type="{{ fieldtype }}" size=10 name='teacher_id' id='teacher_id' placeholder='teacher_id' value=''>
+        <input type="{{ fieldtype }}" size=10 name='absence_date' id='absence_date' placeholder='absence_date' value=''>
+        <input type="{{ fieldtype }}" size=10 name='absence_session' id='absence_session' placeholder='absence_session' value=''>
+        <input type="{{ fieldtype }}" size=10 name='absence_note' id='absence_note' placeholder='absence_note' value=''>
+        <input type="{{ fieldtype }}" size=10 name='absence_excusenote' id='absence_excusenote' placeholder='absence_excusenote' value=''>
+        <input type="{{ fieldtype }}" size=10 name='absence_recovernote' id='absence_recovernote' placeholder='absence_recovernote' value=''>
+        <input type="{{ fieldtype }}" size=10 name='absence_status' id='absence_status' placeholder='absence_status' value=''>
+        <input type="{{ fieldtype }}" size=10 name='absence_excusestatus' id='absence_excusestatus' placeholder='absence_excusestatus' value=''>
+        <input type="{{ fieldtype }}" size=10 name='absence_type' id='absence_type' placeholder='absence_type' value=''>
+    </form>
+    {% set statusTexts =['Unexcused','Excused'] %}
+    {% set studentNumber = 0 %}
+    <table class="table table-bordered table-sm table-striped small" id="mainTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Absence ID</th>
+                <th>Student</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Note</th>
+                <th>Teacher approval</th>
+                <th>Dean approval</th>
+                <th>Action</th>
+                <th>Session</th>
+                <th>Student Group</th>
+                <th>Course</th>
+                <th>Teacher</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for absence in absences %}
+                {% set studentNumber = studentNumber + 1 %}
+                <tr>
+                    <td>{{ studentNumber }}</td>
+                    <td>{{ absence.id }} <input type="checkbox" class="absence-check" id="cbx{{absence.id}}" data-absence='{"id":"{{ absence.id }}"}'></td>
+                    <td><a href='/faculty/attendance/student/{{ absence.student.id }}'>{{ absence.student.lastnameTurkmen }} {{ absence.student.firstnameTurkmen }}</a></td>
+                    <td>{{ absence.date|date('d.m.Y')}}</td>
+                    {% if absence.excuseStatus is not null %}
+                        <td>{{ statusTexts[absence.excuseStatus] }}</td>
+                    {% else %}
+                        <td>{{ statusTexts[0] }}</td>
+                    {% endif %}
+                    <td>{{ absence.note }} {{ absence.excusenote }} {{ absence.recovernote }}</td>
+                    <td>
+                        {% if absence.authorApprovalDate!=null %}
+                            {{ absence.authorApprovalDate|date("d.m.Y") }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if absence.deanApprovalDate!=null %}
+                            {{ absence.deanApprovalDate|date("d.m.Y") }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="dropdown" id="attendance{{absence.student.id}}_{{studentNumber}}">
+                            <button class="btn btn-sm" style="margin:0px;padding:0px;" type="button" data-toggle="dropdown">
+                                <span id="data{{absence.student.id}}_{{studentNumber}}" data-absence='{"id":"0", "note":"", "student_id":"{{ absence.student.id }}", "course_id":"{{ absence.course.id }}", "teacher_id":"{{ absence.author.id }}", "date":"{{ absence.date|date('Y-m-d') }}", "session":"{{ absence.session }}", "status":"0", "excusestatus":"{{ absence.excusestatus }}", "type":"{{ absence.classtype.id }}"}'>
+                                    <img src='/build/images/attendance_note_icon.png'></span>
+                            </button>
+                            <span class='extrasmall' id="info{{absence.student.id}}_{{studentNumber}}"></span>
+                            <div class="dropdown-menu">
+                                {% if is_granted("ROLE_DEAN") %}
+                                    <!--<a class="dropdown-item present" data-id="{{absence.student.id}}_{{studentNumber}}"><img src='/build/images/attendance_check_icon.png'> Present</a>
+                                    <a class="dropdown-item absent" data-id="{{absence.student.id}}_{{studentNumber}}"><img src='/build/images/attendance_cross_icon.png'> Absent</a>-->
+                                    <a class="dropdown-item note" data-id="{{absence.student.id}}_{{studentNumber}}"><img src='/build/images/attendance_note_icon.png'> Note</a>
+                                    <!--<a class="dropdown-item recoverteacher" data-id="{{absence.student.id}}_{{studentNumber}}"><img src='/build/images/attendance_note_icon.png'> Recover (Instructor)</a>-->
+                                        {% if is_granted("ROLE_TEACHER") %}
+                                            {% if absence.author.id==viewingTeacher.id %}
+                                            <a class="dropdown-item recoverteacher" data-id="{{absence.student.id}}_{{studentNumber}}"><img src='/build/images/attendance_note_icon.png'> Recover (Instructor)</a>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% if absence.student.isDean(viewingTeacher)==true %}
+                                    <a class="dropdown-item excuse" data-id="{{absence.student.id}}_{{studentNumber}}"><img src='/build/images/attendance_note_icon.png'> Excuse</a>
+                                    <a class="dropdown-item unexcuse" data-id="{{absence.student.id}}_{{studentNumber}}"><img src='/build/images/attendance_note_icon.png'> Unexcuse</a>
+                                    <a class="dropdown-item recoverdean" data-id="{{absence.student.id}}_{{studentNumber}}"><img src='/build/images/attendance_note_icon.png'> Recover (Dean)</a>
+                                    {% endif %}
+                                    {% else %}
+                                        {% if is_granted("ROLE_TEACHER") %}
+                                            {% if absence.author.id==viewingTeacher.id %}
+                                            <a class="dropdown-item recoverteacher" data-id="{{absence.student.id}}_{{studentNumber}}"><img src='/build/images/attendance_note_icon.png'> Recover (Instructor)</a>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ absence.session }}</td>
+                    <td><a href='/faculty/attendance/group/{{ absence.student.studentgroup.id }}'>{{ absence.student.studentgroup.letterCode }}</a></td>
+                    <td><a href='#{{ absence.course.id }}'>{{ absence.course.nameEnglish }} ({{ absence.classType.letterCode }})</a></td>
+                    <td><a href='/faculty/attendance/teacher/{{ absence.author.id }}'>{{ absence.author.shortfullname }}</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        var selectedItems = Array();
+        $(document).ready(function () {
+
+            $("#begindatepicker").datepicker({dateFormat: "yy-mm-dd"});
+            $("#enddatepicker").datepicker({dateFormat: "yy-mm-dd"});
+
+            $('#btn_view_interval').click(function (e) {
+                view_interval();
+            });
+
+            $('#btn_view_today').click(function (e) {
+                view_today();
+            });
+
+            $('.absence-check').click(function (e) {
+                //console.log($(this).data('absence').id);
+                toggleSelect($(this));
+            });
+
+            $('.dropdown-item.present').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'present');
+            });
+            $('.dropdown-item.absent').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'absent');
+            });
+            $('.dropdown-item.note').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'note');
+            });
+            $('#btnCourse').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'teacher');
+            });
+            $('.dropdown-item.excuse').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'excuse');
+                $('#absence_excusestatus').val(1);
+            });
+            $('.dropdown-item.unexcuse').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'unexcuse');
+                $('#absence_excusestatus').val(0);
+            });
+            $('.dropdown-item.recoverteacher').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'recoverteacher');
+            });
+            $('.dropdown-item.recoverdean').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'recoverdean');
+            });
+            $('#mainTable').DataTable({
+                dom: 'Bfrtip',
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    ['10 rows', '25 rows', '50 rows', 'Show all']
+                ],
+                buttons: [
+                    'pageLength', 'copy', 'excel', 'pdf'
+                ]
+            });
+        });
+
+        function toggleSelect(obj)
+        {
+            var id = obj.data('absence').id;
+            if (obj.is(":checked"))
+            {
+                //add item
+                selectedItems.push(id);
+
+            } else
+            {
+                //remove item
+                const index = selectedItems.indexOf(id);
+                if (index > -1) {
+                    selectedItems.splice(index, 1);
+                }
+            }
+            //console.log(selectedItems); 
+        }
+
+        function downloadReferrals()
+        {
+            var ids = selectedItems.join(",");
+            //console.log(ids);
+            p = '/interop/exporter/referrals/' + ids;
+            window.location.href = p;
+        }
+
+        function send_attendance(id, action)
+        {
+            //console.log(id);
+            var absence = $("#data" + id).data("absence");
+            //console.log(absence);
+
+            absence_note_new = absence.note;
+            absence_excusenote_new = absence.excusenote;
+            absence_recovernote_new = absence.recovernote;
+            if (action == "note")
+            {
+                $('#action').val('note');
+                var absence_note_input = prompt("Please enter note", absence.note);
+                absence_note_new = absence_note_input;
+            }
+            if (action == "excuse")
+            {
+                $('#action').val('excusenote');
+                var absence_note_input = prompt("Please enter excuse note", absence.excusenote);
+                absence_excusenote_new = absence_note_input;
+            }
+            if (action == "recoverdean")
+            {
+                $('#action').val('recovernote');
+                var absence_note_input = prompt("Please enter recover note", absence.recovernote);
+                absence_recovernote_new = absence_note_input;
+            }
+
+            $('#action').val(action);
+            $('#div_id').val(id);
+            $('#absence_id').val(absence.id);
+            $('#student_id').val(absence.student_id);
+            $('#course_id').val(absence.course_id);
+            $('#teacher_id').val(absence.teacher_id);
+            $('#absence_date').val(absence.date);
+            $('#absence_session').val(absence.session);
+            $('#absence_note').val(absence_note_new);
+            $('#absence_excusenote').val(absence_excusenote_new);
+            $('#absence_recovernote').val(absence_recovernote_new);
+            $('#absence_status').val(absence.status);
+            $('#absence_type').val(absence.type);
+
+            send_data();
+            if (action == 'present')
+                $("#data" + id).html("<img src='/build/images/attendance_check_icon.png'>");
+            else if (action == 'absent')
+                $("#data" + id).html("<img src='/build/images/attendance_cross_icon.png'>");
+        }
+
+        function send_data()
+        {
+            p = '/faculty/attendance/process';
+            var inputs = $("#mainform").serialize();
+            console.log(inputs);
+            //return;
+            $.ajax({
+                type: "POST",
+                url: p,
+                data: inputs,
+                success: function (msg) {
+                    //console.log(msg);
+                    $("#info" + $('#div_id').val()).html(msg);
+                }});
+        }
+    </script>
+{% endblock %}

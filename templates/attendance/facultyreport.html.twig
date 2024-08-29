@@ -1,0 +1,146 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .main {font-family:Times New Roman; vertical-align:middle;}
+        .boldtext {font-weight: bold;}
+        @page {
+            size: auto;
+        }
+        .header {vertical-align:middle;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Faculty Attendance Report{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div class="no-print" style="margin:auto;text-align:center;">
+        {% set months = ['Ýanwar','Fewral','Mart','Aprel','Maý','Iýun','Iýul','Awgust','Sentýabr','Oktýabr','Noýabr','Dekabr'] %}
+        {% for month in months %}
+            <a href='/faculty/attendance/facultyreport/{{ faculty.id }}/{{ loop.index }}'>{{ month }}</a> | 
+        {% endfor %}
+        <br><button onclick="download('template_facultyreport.xlsx', 'faculty_report.xls', 8)">xlsx</button>
+    </div><p>
+    <div class='main'>
+        <div style='text-align:center; font-weight:bold;'>
+            <h7>Halkara ynsanperwer ylymlary we ösüş uniwersitetiniň<br><span class='excellable' data-excel='{"cell":"A2"}'>{{ faculty.nameTurkmen }}niň talyplarynyň {{ year }}-nji(y) ýylyň {{ month }} aýynda okuwa gatnaşygy barada</span><br>MAGLUMATY</h7></div>
+        <table class='table table-bordered' id="datatable">
+            <thead><tr>
+                    <th style='vertical-align:middle;'>T/b</th><th  style='vertical-align:middle;'>Hünärler</th><th style='vertical-align:middle;'>Talyp-laryň sany</th>
+                    <th style='vertical-align:middle;'>DÖB</th><th style='vertical-align:middle;'>I ýyl</th><th style='vertical-align:middle;'>II ýyl</th><th style='vertical-align:middle;'>III ýyl</th><th style='vertical-align:middle;'>IV ýyl</th><th style='vertical-align:middle;'>M.t.</th>
+                    <th style='vertical-align:middle;'>Okamaly<br> jübüt<br> sagatlaryň jemi sany</th>
+                    <th style='vertical-align:middle;'>Sapaga gatnaşyk %</th>
+                    <th style='vertical-align:middle;'>Žurnal-daky<br> “gm” belgileriň<br> umumy sany</th>
+                    <th style='vertical-align:middle;'>DÖB</th><th style='vertical-align:middle;'>I ýyl</th><th style='vertical-align:middle;'>II ýyl</th><th style='vertical-align:middle;'>III ýyl</th><th style='vertical-align:middle;'>IV ýyl</th><th style='vertical-align:middle;'>M.t.</th>
+                    <th style='vertical-align:middle;'>Sebäp-siz</th><th style='vertical-align:middle;'>Ýaraw-syzlygy sebäpli</th><th style='vertical-align:middle;'>Beýleki sebäp-lere görä</th>
+                </tr></thead>
+                {{ content|raw }}
+        </table>
+    </div>
+    <div class="main" style='text-align:center;margin:auto;border:0px solid red;font-weight:bold;'>
+        <table style='width:auto;margin:auto;text-align:left;'>
+            <tr><td width="300"><span class='excellable' data-excel='{"cell":"C10"}'>{{ faculty.NameTurkmen }}niň dekanynyň w.ý.ý.</span></td>
+                <td width="200">&nbsp;</td>
+                <td><span class='excellable' data-excel='{"cell":"N10"}'>{{ faculty.dean.shortfullname }}</span></td></tr>
+            <tr><td></td><td width="200">&nbsp;</td><td></td></tr>
+            <tr><td>Okuw işleri boýunça prorektor</td><td width="200">&nbsp;</td><td>G.Akmyradowa</td></tr>
+        </table>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        // $(document).ready(function () {
+        function download(templatefile, filename, startrow) {
+            special_cells = Array();
+            //add special cells
+            $('.excellable').each(function (i, obj) {
+                //test
+                //console.log(obj);
+                //console.log($(this).data('excel'));
+                special_cells.push([$(this).data('excel').cell, $(this).html()]);
+            });
+            //console.log(special_cells);
+            //return;
+            rows = Array();
+            var targetParams = [
+                [0, 'A'],
+                [1, 'B'],
+                [2, 'C'],
+                [3, 'D'],
+                [4, 'E'],
+                [5, 'F'],
+                [6, 'G'],
+                [7, 'H'],
+                [8, 'I'],
+                [9, 'J'],
+                [10, 'K'],
+                [11, 'L'],
+                [12, 'M'],
+                [13, 'N'],
+                [14, 'O'],
+                [15, 'P'],
+                [16, 'Q'],
+                [17, 'R'],
+                [18, 'S'],
+                [19, 'T'],
+                [20, 'U']
+            ];
+            //console.log(targetParams.length);
+            $('.excellablerow').each(function () {
+                row = Array();
+                for (i = 0; i < targetParams.length; i++)
+                {
+                    //console.log(i);
+                    item = targetParams[i];
+                    //console.log($(this).find("td").eq(item[0]).html());
+                    row.push([item[1], $(this).find("td").eq(item[0]).html()]);
+                }
+                rows.push(row);
+            });
+            footerRow = $('#footerrow');
+            footerRowData = Array();
+            for (i = 0; i < targetParams.length; i++)
+            {
+                //console.log(i);
+                item = targetParams[i];
+                //console.log($(this).find("td").eq(item[0]).html());
+                footerRowData.push([item[1], footerRow.find("td").eq(item[0]).html()]);
+            }
+            //console.log(footerRowData);
+            //return;
+            // Data to post
+            data = {
+                template: templatefile,
+                filename: filename,
+                special_cells: special_cells,
+                startrow: startrow,
+                rows: rows,
+                footerRowData: footerRowData,
+                lightcolor: 'FFD3D3D3'
+            };
+
+            // Use XMLHttpRequest instead of Jquery $ajax
+            xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                var a;
+                if (xhttp.readyState === 4 && xhttp.status === 200) {
+                    // Trick for making downloadable link
+                    a = document.createElement('a');
+                    a.href = window.URL.createObjectURL(xhttp.response);
+                    // Give filename you wish to download
+                    a.download = filename;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                }
+            };
+            // Post data to URL which handles post request
+            xhttp.open("POST", '/interop/exporter/postdata');
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            // You should set responseType as blob for binary responses
+            xhttp.responseType = 'blob';
+            xhttp.send(JSON.stringify(data));
+        }
+        //});
+    </script>
+{% endblock %}

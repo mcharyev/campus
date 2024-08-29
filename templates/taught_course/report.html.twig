@@ -1,0 +1,216 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .small {font-size:12px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+        .bold {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Courses{% endblock %}
+{% block main %}
+    <h4>{{ report_title }}</h4>
+    {% if faculty is not null %}
+        <h6><span class='bold'>Faculty:</span> {{ faculty.nameEnglish }}</h6>
+    {% endif %}
+    {% if department is not null %}
+        <h6><span class='bold'>Department: </span> {{ department.nameEnglish }}</h6>
+    {% endif %}
+    {% if teacher is not null %}
+        <h6><span class='bold'>Teacher: </span> {{ teacher.fullname }}</h6>
+    {% endif %}
+    <table class="table table-bordered table-sm table-striped small" id="mainTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Semester</th>
+                <th>Course</th>
+                <th>Instructor</th>
+                <th>Department</th>
+                <th>Group</th>
+                <th>Links</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for course in courses %} 
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ course.semester }}</td>
+                    <td>{{ course.nameEnglish }}</td>
+                    <td>{{ course.teacher.fullname }}</td>
+                    <td>{{ course.department.letterCode }}</td>
+                    <td>{{ course.studentGroups }}</td>
+                    <td>
+                        <a href='/interop/exporter/courseattendancesheet/{{ course.id }}/0/{{ course.semester-1 }}'>Midterm Attendance Sheet</a>
+                        | <a href='/interop/exporter/courseattendancesheet/{{ course.id }}/1/{{ course.semester-1 }}'>Final Attendance</a>
+                        | <a href='/interop/exporter/courseattendancesheet/{{ course.id }}/2/{{ course.semester-1 }}'>SIW Attendence </a>
+                        | <a href='/interop/exporter/courseattendancesheet/{{ course.id }}/3/{{ course.semester-1 }}'>Make up Attendance</a>
+                        <br>
+                        <a href='/interop/exporter/courseexamcover/{{ course.id }}/0/{{ course.semester-1 }}'>Midterm exam cover</a>
+                        | <a href='/interop/exporter/courseexamcover/{{ course.id }}/1/{{ course.semester-1 }}'>Final exam cover</a>
+                        | <a href='/interop/exporter/courseexamcover/{{ course.id }}/2/{{ course.semester-1 }}'>SIW exam cover</a>
+                        | <a href='/interop/exporter/courseexamcover/{{ course.id }}/3/{{ course.semester-1 }}'>Make up Final exam cover</a>
+                        <br>
+                        {% if course.gradingType==1 %}
+                            <a href='/interop/exporter/coursegradesheet/{{ course.id }}/0/{{ course.semester-1 }}'>Exam Grade Sheet</a>
+                            | <a href='/grading/transcriptcourse/course/view/{{ course.id }}/{{ course.courseCode }}/{{ course.studentGroups }}/{{ course.year }}'>Grades</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        var selectedItems = Array();
+        $(document).ready(function () {
+
+            $("#begindatepicker").datepicker({dateFormat: "yy-mm-dd"});
+            $("#enddatepicker").datepicker({dateFormat: "yy-mm-dd"});
+
+            $('#btn_view_interval').click(function (e) {
+                view_interval();
+            });
+
+            $('#btn_view_today').click(function (e) {
+                view_today();
+            });
+
+            $('.absence-check').click(function (e) {
+                //console.log($(this).data('absence').id);
+                toggleSelect($(this));
+            });
+
+            $('.dropdown-item.present').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'present');
+            });
+            $('.dropdown-item.absent').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'absent');
+            });
+            $('.dropdown-item.note').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'note');
+            });
+            $('#btnCourse').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'teacher');
+            });
+            $('.dropdown-item.excuse').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'excuse');
+                $('#absence_excusestatus').val(1);
+            });
+            $('.dropdown-item.unexcuse').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'unexcuse');
+                $('#absence_excusestatus').val(0);
+            });
+            $('.dropdown-item.recoverteacher').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'recoverteacher');
+            });
+            $('.dropdown-item.recoverdean').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'recoverdean');
+            });
+            $('#mainTable').DataTable({
+                dom: 'Bfrtip',
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    ['10 rows', '25 rows', '50 rows', 'Show all']
+                ],
+                buttons: [
+                    'pageLength', 'copy', 'excel', 'pdf'
+                ]
+            });
+        });
+
+        function toggleSelect(obj)
+        {
+            var id = obj.data('absence').id;
+            if (obj.is(":checked"))
+            {
+                //add item
+                selectedItems.push(id);
+
+            } else
+            {
+                //remove item
+                const index = selectedItems.indexOf(id);
+                if (index > -1) {
+                    selectedItems.splice(index, 1);
+                }
+            }
+            //console.log(selectedItems); 
+        }
+
+        function downloadReferrals()
+        {
+            var ids = selectedItems.join(",");
+            //console.log(ids);
+            p = '/interop/exporter/referrals/' + ids;
+            window.location.href = p;
+        }
+
+        function send_attendance(id, action)
+        {
+            //console.log(id);
+            var absence = $("#data" + id).data("absence");
+            //console.log(absence);
+
+            absence_note_new = absence.note;
+            absence_excusenote_new = absence.excusenote;
+            absence_recovernote_new = absence.recovernote;
+            if (action == "note")
+            {
+                $('#action').val('note');
+                var absence_note_input = prompt("Please enter note", absence.note);
+                absence_note_new = absence_note_input;
+            }
+            if (action == "excuse")
+            {
+                $('#action').val('excusenote');
+                var absence_note_input = prompt("Please enter excuse note", absence.excusenote);
+                absence_excusenote_new = absence_note_input;
+            }
+            if (action == "recoverdean")
+            {
+                $('#action').val('recovernote');
+                var absence_note_input = prompt("Please enter recover note", absence.recovernote);
+                absence_recovernote_new = absence_note_input;
+            }
+
+            $('#action').val(action);
+            $('#div_id').val(id);
+            $('#absence_id').val(absence.id);
+            $('#student_id').val(absence.student_id);
+            $('#course_id').val(absence.course_id);
+            $('#teacher_id').val(absence.teacher_id);
+            $('#absence_date').val(absence.date);
+            $('#absence_session').val(absence.session);
+            $('#absence_note').val(absence_note_new);
+            $('#absence_excusenote').val(absence_excusenote_new);
+            $('#absence_recovernote').val(absence_recovernote_new);
+            $('#absence_status').val(absence.status);
+            $('#absence_type').val(absence.type);
+
+            send_data();
+            if (action == 'present')
+                $("#data" + id).html("<img src='/build/images/attendance_check_icon.png'>");
+            else if (action == 'absent')
+                $("#data" + id).html("<img src='/build/images/attendance_cross_icon.png'>");
+        }
+
+        function send_data()
+        {
+            p = '/faculty/attendance/process';
+            var inputs = $("#mainform").serialize();
+            console.log(inputs);
+            //return;
+            $.ajax({
+                type: "POST",
+                url: p,
+                data: inputs,
+                success: function (msg) {
+                    //console.log(msg);
+                    $("#info" + $('#div_id').val()).html(msg);
+                }});
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .bold {font-weight:bold;}
+        .cell {text-align:center;font-size:1em;}
+        .heading {
+            width:100%;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+        }
+    </style>
+{% endblock %}
+{% block moduletitle %}Schedule{% endblock %}
+{% block main %}
+    <div style="margin:auto;">
+        <div class='heading'><h3 style='heading'>Schedule for: {{ object.name }} {{ object.longname }}</h3></div>
+        <table class='table table-bordered table-condensed table-sm table-responsive'>
+            <tr><th></th>
+                    {% for session in sessions %}
+                    <th class='bold'>{{ session }}</td>
+                    {% endfor %}
+            </tr>
+            {% set indexDay=1 %}
+            {% for day in days %}
+                <tr>
+                    <th width='5%'>{{ day }}</th>
+                        {% set indexSession=1 %}
+                        {% for session in sessions %}
+                        <td class='cell'>
+                            {% for scheduleItem in scheduleItems %}
+                                {% if scheduleItem.item.day==indexDay and scheduleItem.item.session==indexSession %}
+                                    {% if object.type != 'room' %}
+                                        {% for room in scheduleItem.rooms %}
+                                            <a href='/faculty/scheduledisplay/room/{{ room.id }}'>{{ room.letterCode }}</a>
+                                        {% endfor %}
+                                    {% endif %}<br>
+                                    {{ scheduleItem.item.taughtCourse.nameEnglish }} ({{ scheduleItem.item.classtype.lettercode }})<br>
+                                    {% if object.type != 'group' %}
+                                        {% for group in scheduleItem.groups %}
+                                            <a href='/faculty/scheduledisplay/group/{{ group.systemId }}'>{{ group.letterCode }}</a>
+                                        {% endfor %}<br>
+                                    {% endif %}
+                                    {% if object.type != 'teacher' %}
+                                        {% for teacher in scheduleItem.teachers %}
+                                            <a href='/faculty/scheduledisplay/teacher/{{ teacher.id }}'>{{ teacher.shortfullname }}</a>
+                                        {% endfor %}<br>
+                                    {% endif %}
+                                    {% if is_granted("ROLE_SPECIALIST") %}
+                                        <a href="/faculty/scheduleitem/edit/{{ scheduleItem.item.id }}">Edit</a>
+                                        {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        {% set indexSession=indexSession+1 %}
+                    {% endfor %}
+                </tr>
+                {% set indexDay=indexDay+1 %}
+            {% endfor %}
+        </table>
+    </div>
+    <div>
+        {{ debug|raw }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+        });
+    </script>
+{% endblock %}

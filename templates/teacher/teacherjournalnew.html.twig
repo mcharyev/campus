@@ -1,0 +1,1121 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:11px;}
+        .small {font-size:11px;}
+        .today_class {background-color:green;color:#fff;}
+        .freeday_class {background-color:#fab9af;color:#000;}
+        .changed_class {background-color:orange;color:#000;}
+        .coverday_class {background-color:#97b7fc;color:#000;}
+        .everyday_class {}
+        .monthsum {background-color:#f5f5f5;font-weight:bold;border-bottom:1px solid gray; border-right:1px solid gray;}
+        .scheduleitemheader {background-color:#f5f5f5;}
+        .coursename {font-size:1.5em; background-color:#f5f5f5; font-weight:bold;}
+        .tcell {display: table-cell; border-left:1px solid gray; padding:5px;}
+        .courseDayRow { display:table-row; border-bottom:1px solid gray;}
+        .courseMonth { display:table-row-group; border-bottom:1px solid gray; border-top:1px solid gray;border-right:1px solid gray;}
+        strong {
+            font-weight:bold;
+        }
+        .green {
+            font-weight:bold;
+            color: green;
+            padding:2px;
+            background-color: lightgreen;
+        }
+        .red {
+            font-weight: bold;
+            color: red;
+            padding:2px;
+            background-color: yellow;
+        }
+    </style>
+{% endblock %}
+{% block moduletitle %}Teacher Journal:{% endblock %}
+{% block main %}
+    {% set classTypes = [1,2,3,4,5,6,7] %}
+    {% set classPeriods = [1,2,3] %}
+    {% set classTypeNames = ['','Lecture','Seminar','Practice','Lab','Class Hour','SIWSI','Language', 'Short Lecture','Short Seminar','Short Practice','Short Lab','Short Class Hour',] %}
+    {% set workloadNames = ['1.00','0.75','0.50','0.25','other','Hourly', 'Replacement','Vacancy'] %}
+    {% set monthNames=['January','February','March','April','May','June','July','August','September', 'October', 'November', 'December','January'] %}
+    {% set monthSemesters=[2,2,2,2,2,2,2,2,1,1,1,1,1] %}
+    {% if teacherWorkSet is not null %}
+        <h4>
+            Department Register for Instructor: {{ teacher.fullname }} 
+            (Workload: {{ teacherWorkSet.shortTitle }})
+        </h4>
+        <h6><span class='bold'>Faculty:</span> {{ teacher.department.faculty.nameEnglish }}, <span class='bold'>Dean:</span> {{ teacher.department.faculty.dean.fullname }}</h6>
+        <h6><span class='bold'>Department: </span>{{ teacher.department.nameEnglish }}, <span class='bold'>Department Head:</span> {{ teacher.department.departmenthead.fullname }}</h6>
+        <div class='no-print'>
+            <h6>
+                <span class='bold'>Link:</span> 
+                <a href="/faculty/scheduledisplay/teacher/{{ teacher.id }}">Instructor's Schedule</a> |
+                {% if is_granted("ROLE_DEPARTMENTHEAD") %}
+                    <a href='/faculty/departmentworkreport/{{ teacherWorkSet.department.id }}/{{ year }}/{{ semester }}'>Department work report</a> |
+                    <a href='/faculty/departmentworksets/{{ teacherWorkSet.department.systemId }}/{{ year }}'>Department worksets</a>
+                {% endif %}
+            </h6>
+            <h6>
+                <span class='bold'>Workset Plans:</span> 
+                {% for teacherWorkSet in teacher.teacherWorkSets %}
+                    <a href="/faculty/teacherworkset/view/{{ teacher.id }}/{{ teacherWorkSet.id }}/{{ year }}">{{ teacherWorkSet.shortTitle }}</a> |
+                {% endfor %}
+            </h6>
+            <h6>
+                <span class='bold'>Workset Reports:</span> 
+                {% for teacherWorkSet in teacher.teacherWorkSets %}
+                    <a href="/faculty/teacherworkreport/{{ teacher.id }}/{{ teacherWorkSet.id }}/{{ year }}/{{ semester }}">{{ teacherWorkSet.shortTitle }}</a> |
+                {% endfor %}
+            </h6>
+            <h6>
+                <span class='bold'>Workset Journals:</span> 
+                {% for teacherWorkSet in teacher.teacherWorkSets %}
+                    <a href="/faculty/teacherjournalnew/{{ teacher.id }}/{{ teacherWorkSet.id }}/{{ year }}/{{ semester }}">{{ teacherWorkSet.shortTitle }}</a> |
+                {% endfor %}
+            </h6>
+            <h6>
+                <span class='bold'>For months:</span> 
+                {% for month in monthNames %}
+                    {% if loop.index>8 %}
+                        <a href="/faculty/teacherjournalnew/{{ teacher.id }}/{{ teacherWorkSet.id }}/{{ year }}/{{ monthSemesters[loop.index0] }}/{{ loop.index }}">{{ month }}</a> |
+                    {% else %}
+                        <a href="/faculty/teacherjournalnew/{{ teacher.id }}/{{ teacherWorkSet.id }}/{{ year }}/{{ monthSemesters[loop.index0] }}/{{ loop.index }}">{{ month }}</a> |
+                    {% endif %}
+                {% endfor %}
+            </h6>
+        </div>
+        <div id='wrapper'>
+            {% for teacherWorkSetViewItem in teacherWorkSetViewItems %}
+                {#                                {% if teacherWorkSetViewItem.totalSum>0 or reportedMonth==null %}#}
+                {% if teacherWorkSetViewItem.teacherWorkItem.data[29]>0 or reportedMonth==null %}
+
+                    <div style=''>
+                        <table class="table table-bordered table-compact table-sm small" style="width:auto;">
+                            <tr class="coursename">
+                                <td>
+                                    {% if teacherWorkSetViewItem.teacherWorkItem.taughtCourse!=null %}
+                                        <section id="section{{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }}"></section>
+                                        {% endif %}
+                                    <span>
+                                        {{ teacherWorkSetViewItem.teacherWorkItem.title }} - 
+                                        {{ teacherWorkSetViewItem.teacherWorkItem.groupLetterCodes }} 
+                                        {#                        {{ teacherWorkSetViewItem.teacherWorkItem.id }}#}
+                                    </span>
+                                    <br>
+                                    ({{ teacherWorkSetViewItem.courseName }})
+                                    <span class="no-print">
+                                        {% if teacherWorkSetViewItem.teacherWorkItem.taughtCourse!=null %}
+                                            <a href="/faculty/attendancejournal/course/{{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }}">Course Journal</a> | 
+                                            {% if is_granted("ROLE_SPECIALIST") %}
+                                                <a href="/faculty/taughtcourse/edit/{{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }}">Edit Course</a> |
+                                                <a href="/faculty/scheduleitem/add/{{ teacher.id }}/{{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }}/1/1/8">Add schedule item</a> |
+                                                {#                                                <a href="javascript:changeAllScheduleItems(1, {{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }},'2020-02-02','2021-06-08');" title="Change all schedule item dates together">Change all</a> |#}
+                                                <a href="javascript:copyToCourse(1, {{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }});" title="Copy all schedule items to another course">Copy to course</a> |
+                                                <a href="javascript:scheduleFastAdd(3, {{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }}, '{{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.studentGroups }}', '2020-02-02', '2021-06-08');" title="Add schedule by code">Fast add</a> |
+                                                <a href="javascript:updateGradingType({{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }});" title="Make this course gradable">Gradable</a> |
+                                            {% endif %}
+                                            {% if viewingTeacher==teacher or is_granted("ROLE_DEPARTMENTHEAD") or is_granted("ROLE_SPECIALIST") %}
+                                                <a href="/faculty/taughtcourse/editbyteacher/{{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }}/{{ viewingTeacher.id }}">Edit topics</a>
+                                            {% endif %}
+                                            <span id='courseInfo{{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }}'></span>
+                                        {% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <table>
+                                        {% for scheduleItemViewColumn in teacherWorkSetViewItem.scheduleItemViewColumns  %}
+                                            <tr class='scheduleitemheader'>
+                                                <td colspan='20'>
+                                                    <strong>Type:</strong> {{ scheduleItemViewColumn.classType|upper }}<br>
+                                                    <strong>Groups:</strong> {{ scheduleItemViewColumn.groupNames|upper }}<br>
+                                                    {# {% if is_granted("ROLE_SPECIALIST") %}
+                                                         <select class="period" id="period{{ scheduleItemViewColumn.scheduleItem.id }}" data-field='{"field":"period", "item_id":"{{ scheduleItemViewColumn.scheduleItem.id }}"}'>
+                                                             <option value="1">1</option>
+                                                             {% for classPeriod in classPeriods %}
+                                                                 {% if loop.index0==item.workitem.includeColumn %}
+                                                                     <option value="{{ loop.index0 }}" selected>{{ includeColumnName }}</option>
+                                                                 {% else %}
+                                                                     <option value="{{ loop.index0 }}">{{ includeColumnName }}</option>
+                                                                 {% endif %}
+                                                             {% endfor %}
+                                                         </select>
+                                                     {% endif %}#}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                {% set itemNumber = 1 %}
+                                                {% for month in months %}
+                                                    <td>
+                                                        {% for monthlyWorkItem in scheduleItemViewColumn.monthlyWorkItems if monthlyWorkItem.monthNumber==month %}
+                                                            <div class='courseMonth'>
+                                                                {% for courseDay in monthlyWorkItem.courseDays %}
+                                                                    {% set today_class='everyday_class' %}
+                                                                    {% if courseDay.changed==true %}
+                                                                        {% set today_class='changed_class' %}
+                                                                    {% endif %}
+                                                                    {% if courseDay.holiday is not null %}
+                                                                        {% set today_class='freeday_class' %}
+                                                                    {% endif %}
+                                                                    {% if courseDay.coverday is not null %}
+                                                                        {% set today_class='coverday_class' %}
+                                                                    {% endif %}
+                                                                    <div class='courseDayRow'>
+                                                                        {% if courseDay.changed==false %}
+                                                                            <span class='tcell'>{{ itemNumber }}</span>
+                                                                        {% else %}
+                                                                            <span class='tcell'></span>
+                                                                        {% endif %}
+                                                                        <span class="{{ today_class }} tcell">{{ courseDay.date|date('d.m') }}</span>
+                                                                        <span class="{{ today_class }} tcell">{{ courseDay.date|date('D') }}</span>
+                                                                        <span class="{{ today_class }} tcell">{{ courseDay.session }}</span>
+                                                                        {#{% if is_granted("ROLE_ADMIN") %}
+                                                                            <td class="{{ today_class }}">{{ courseDay.scheduleItem.schedule.id }}</td>
+                                                                            <td class="{{ today_class }}">{{ courseDay.scheduleItem.endDate|date('d.m') }}</td>
+                                                                        {% endif %}#}
+                                                                        {#                                                                        Special condition for two-shift schedule#}
+                                                                        <span class="{{ today_class }} tcell">
+                                                                            {% if scheduleItemViewColumn.scheduleItem.schedule.id==8 %}
+                                                                                {{ (courseDay.scheduleItem.classType.hours/2) }}
+                                                                            {% else %}
+                                                                                {{ courseDay.scheduleItem.classType.hours }}
+                                                                            {% endif %}
+                                                                        </span>
+                                                                        <span  class='tcell'>
+                                                                            {% if courseDay.holiday is null %}
+                                                                                {% if courseDay.coverday is not null %}
+                                                                                    Replacing: {{ courseDay.coverdayTitle }} / {{ courseDay.title }} 
+
+                                                                                    {# {% if courseDay.changedDay is not null %}
+                                                                                         <a href='/faculty/schedulechange/editinjournal/{{ courseDay.changedDay.id }}/{{ courseDay.scheduleItem.id }}/{{ year }}/{{ semester }}/{{ courseDay.date|date('Y-m-d') }}'>Edit change</a>
+                                                                                         {% if is_granted("ROLE_SPECIALIST") %}
+                                                                                             <a href='javascript:deleteScheduleChange({{ courseDay.changedDay.id }});'>Delete change</a> 
+                                                                                             <a href='javascript:changeScheduleChangeStatus({{ courseDay.changedDay.id }},{{ courseDay.changedDay.status }});'>Status</a> 
+                                                                                         {% endif %}
+                                                                                         <span id='info{{ courseDay.changedDay.id }}'></span>
+                                                                                     {% endif %}#}
+                                                                                {% else %}
+                                                                                    {{ courseDay.title }} 
+                                                                                {% endif %}
+                                                                                <span class="no-print">
+                                                                                    {% if is_granted("ROLE_DEPARTMENTHEAD") %}
+                                                                                        {% if courseDay.changedDay is not null %}
+                                                                                            <a href='/faculty/schedulechange/editinjournal/{{ courseDay.changedDay.id }}/{{ courseDay.scheduleItem.id }}/{{ year }}/{{ semester }}/{{ courseDay.date|date('Y-m-d') }}'>Edit change</a>
+                                                                                            {% if is_granted("ROLE_SPECIALIST") %}
+                                                                                                <a href="javascript:deleteScheduleChange({{ courseDay.changedDay.id }},'info');">Delete change</a> 
+                                                                                                <a href="javascript:changeScheduleChangeStatus({{ courseDay.changedDay.id }},{{ courseDay.changedDay.status }});">Status</a> 
+                                                                                            {% endif %}
+                                                                                            <span id='info{{ courseDay.changedDay.id }}'></span>
+                                                                                        {% else %}
+                                                                                            {% if is_granted("ROLE_SPECIALIST") %}
+                                                                                                [{{ courseDay.scheduleItem.schedule.systemId }}] [{{ courseDay.scheduleItem.id }}]
+                                                                                                <a href="/faculty/scheduleitem/edit/{{ courseDay.scheduleItem.id }}">Edit</a> 
+                                                                                                <a href="javascript:changePeriod({{ itemNumber }},{{ courseDay.scheduleItem.id }},{{ courseDay.scheduleItem.period }});">Period</a> 
+                                                                                                {#<a href="javascript:specialAction(1, {{ itemNumber }},{{ courseDay.scheduleItem.id }});" title="Duplicate for second shift">Sp1</a> 
+                                                                                                <a href="javascript:specialAction(2, {{ itemNumber }},{{ courseDay.scheduleItem.id }});" title="Duplicate for second schedule">Sp2</a> 
+                                                                                                <a href="javascript:specialAction(3, {{ itemNumber }},{{ courseDay.scheduleItem.id }});" title="Make 30 hours semester for 4th years">Sp3</a> 
+                                                                                                <a href="javascript:specialAction(4, {{ itemNumber }},{{ courseDay.scheduleItem.id }});" title="Change dates to 02.02-02.16">Sp4</a> 
+                                                                                                <a href="javascript:specialAction(5, {{ itemNumber }},{{ courseDay.scheduleItem.id }});" title="Change dates to 02.16-06.08">Sp5</a> 
+                                                                                                <a href="javascript:specialAction(3, {{ itemNumber }},{{ courseDay.scheduleItem.id }});">Sp 3</a>-->#}
+                                                                                                <span id='info{{ courseDay.scheduleItem.id }}_{{ itemNumber }}'></span>
+                                                                                            {% endif %}
+                                                                                            <a href='/faculty/schedulechange/editinjournal/0/{{ courseDay.scheduleItem.id }}/{{ year }}/{{ semester }}/{{ courseDay.date|date('Y-m-d') }}'>Change</a>
+                                                                                        {% endif %}
+                                                                                    {% endif %}
+                                                                                </span>
+                                                                            {% else %}
+                                                                                {{ courseDay.holiday.title }}
+                                                                                {#<a href='/faculty/schedulechange/editinjournal/0/{{ courseDay.scheduleItem.id }}/{{ year }}/{{ semester }}/{{ courseDay.date|date('Y-m-d') }}'>Change</a>#}
+                                                                            {% endif %}
+                                                                        </span>
+                                                                        {% if courseDay.holiday is null %}
+                                                                            <span class="{{ today_class }} tcell">________</span>
+                                                                        {% else %}
+                                                                            <span class="tcell"></span>
+                                                                        {% endif %}
+
+                                                                    </div>
+                                                                    {% if courseDay.changed==false %}
+                                                                        {% set itemNumber=itemNumber+1 %}
+                                                                    {% endif %}
+                                                                   {# HERE
+                                                                    {% if courseDay.freeday is not null %}
+                                                                        {{ courseDay.freeday.type }}
+                                                                    {% endif %}#}
+                                                                {% endfor %}
+
+                                                            </div>
+                                                            <div class='monthsum'>
+                                                                <span class='tcell'>
+                                                                    {% for monthlyWorkItem in scheduleItemViewColumn.monthlyWorkItems if monthlyWorkItem.monthNumber==month %}
+                                                                        {{ monthlyWorkItem.monthName }} sum: {{ monthlyWorkItem.monthSum }} hours
+                                                                    {% endfor %}
+                                                                </span>
+                                                            </div>                                           {% endfor %}
+                                                        </td>
+                                                    {% endfor %}
+                                                </tr>
+
+                                            {% endfor %}
+                                        </table>
+                                    </td>
+                                </tr>
+                                {% if reportedMonth==null %}
+                                    <tr>
+                                        <td colspan="5">
+                                            <strong>PLANNED WORKLOAD:</strong><br>
+                                            {% set workitemSum = 0 %}
+                                            <table class='table table-sm table-condensed table-bordered' style="width:auto;">
+                                                <thead>
+                                                    <tr class='monthsum'>
+                                                        <th style='vertical-align:middle;'>
+                                                            Work item
+                                                        </th>
+                                                        {% for i in 9..29 %}
+                                                            <th style='vertical-align:middle;'>
+                                                                {{ columnNames[i] }}
+                                                            </th>
+                                                        {% endfor %}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% if teacherWorkSetViewItem.teacherWorkItem!=null %}
+                                                        {% set workitemSum = workitemSum+teacherWorkSetViewItem.teacherWorkItem.data[29] %}
+                                                        <tr>
+                                                            <td style='vertical-align:middle;'>
+                                                                <span class='no-print'>
+                                                                    [{{ teacherWorkSetViewItem.teacherWorkItem.id }}] 
+                                                                </span>
+                                                                {{ teacherWorkSetViewItem.teacherWorkItem.title }} - {{ teacherWorkSetViewItem.teacherWorkItem.groupLetterCodes }} <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/{{ teacherWorkSetViewItem.teacherWorkItem.workload }}'>({{ workloadNames[teacherWorkSetViewItem.teacherWorkItem.workload] }})</a>
+                                                                {% if is_granted("ROLE_TEACHER") %}
+                                                                    {#                                                                    <a href='/faculty/reportedwork/editinjournal/0/{{ teacherWorkSetViewItem.teacherWorkItem.id }}/{{ year }}/{{ semester }}' title='Add reported works for this item'>Add</a>#}
+                                                                    <a href="javascript:openReportedWorkForm(0,0,0,'{{ "now"|date("d-m-Y") }}',{{ teacherWorkSetViewItem.teacherWorkItem.id }},{{ teacher.id }},'');" title='Add reported works for this item'>Add</a>
+                                                                {% endif %}
+                                                            </td>
+                                                            {% for i in 9..29 %}
+                                                                <td style='vertical-align:middle;'>
+                                                                    {% if teacherWorkSetViewItem.teacherWorkItem.data[i]>0 %}
+                                                                        {{  teacherWorkSetViewItem.teacherWorkItem.data[i] }}
+                                                                    {% endif %}
+                                                                </td>
+                                                            {% endfor %}
+                                                        </tr>
+                                                    {% endif %}
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                                <tr>
+                                    <td colspan="5">
+                                        <strong>REPORTED WORKLOAD:</strong><br>
+                                        <table id='reportedWorksTable{{ teacherWorkSetViewItem.teacherWorkItem.id }}' class='table table-sm table-condensed table-bordered'>
+                                            <thead>
+                                                <tr class='monthsum'><th>Work type</th><th>Date</th><th>Reported hours</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                {% set totalSum = 0 %}
+                                                {% if teacherWorkSetViewItem.classTypeSums!=null %}
+                                                    {% if teacherWorkSetViewItem.classTypeSums[1]>0 %}
+                                                        <tr>
+                                                            <td>Lectures </td>
+                                                            <td></td>
+                                                            <td>{{ teacherWorkSetViewItem.classTypeSums[1] }}</td>
+                                                        </tr>
+                                                    {% endif %}
+                                                    {% if teacherWorkSetViewItem.classTypeSums[2]>0 or teacherWorkSetViewItem.classTypeSums[3]>0 %}
+                                                        <tr>
+                                                            <td>Practice/Seminar </td>
+                                                            <td></td>
+                                                            <td>{{ teacherWorkSetViewItem.classTypeSums[2]+teacherWorkSetViewItem.classTypeSums[3] }}</td>
+                                                        </tr>
+                                                    {% endif %}
+                                                    {% if teacherWorkSetViewItem.classTypeSums[4]>0 %}
+                                                        <tr>
+                                                            <td>Lab</td>
+                                                            <td></td>
+                                                            <td>{{ teacherWorkSetViewItem.classTypeSums[4] }}</td>
+                                                        </tr>
+                                                    {% endif %}
+                                                    {% if teacherWorkSetViewItem.classTypeSums[6]>0 %}
+                                                        <tr><td>SIWSI</td>
+                                                            <td></td>
+                                                            <td>{{ teacherWorkSetViewItem.classTypeSums[6] }}</td>
+                                                        </tr>
+                                                    {% endif %}
+                                                {% endif %}
+                                                {% set workitem = teacherWorkSetViewItem.teacherWorkItem %}
+                                                {% if workitem!=null %}
+                                                    {% for reportedWork in workitem.reportedworks %}
+                                                        {% if is_granted("ROLE_TEACHER") %}
+                                                            <tr id="reportedWorkRow{{ reportedWork.id }}">
+                                                                <td>
+                                                                    {{ reportedWork.typeName }} 
+                                                                    <span class='no-print'>
+                                                                        {#                                                                        <a href='/faculty/reportedwork/editinjournal/{{ reportedWork.id }}/{{workitem.id }}/{{ year }}/{{ semester }}'>Edit</a>#}
+                                                                        <a href="javascript:openReportedWorkForm({{ reportedWork.id }}, {{ reportedWork.type }}, {{ reportedWork.amount }}, '{{ reportedWork.date|date("d-m-Y") }}', {{ teacherWorkSetViewItem.teacherWorkItem.id }},{{ teacher.id }},'{{ reportedWork.note }}');" title='Edit item'>Edit</a>
+                                                                    </span>
+                                                                    {#                                        {{ reportedWork.typeName }} <a href='/faculty/reportedwork/editinjournal/{{ reportedWork.id }}/{{workitem.id }}/{{ year }}/{{ semester }}'>Delete</a>#}
+                                                                    {% if is_granted("ROLE_SPECIALIST") %}
+                                                                        <a href='javascript:deleteReportedWork({{ reportedWork.id }});'>Delete</a>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>{{ reportedWork.date|date("d.m.Y") }}</td>
+                                                                <td>{{ reportedWork.amount }}</td>
+                                                                {% if reportedMonth!=null %}
+                                                                    <td>________</td>
+                                                                {% endif %}
+                                                            </tr>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                    {% if reportedMonth==null %}
+                                                        {% if teacherWorkSetViewItem.replacedSessionsSums[29]>0 %}
+                                                            <tr>
+                                                                <td>Substitutions</td>
+                                                                <td></td>
+                                                                <td>{{ teacherWorkSetViewItem.replacedSessionsSums[29] }}</td>
+                                                                {% if reportedMonth!=null %}
+                                                                    <td></td>
+                                                                {% endif %}
+                                                            </tr>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endif %}
+                                            </tbody>
+                                            <tfoot>
+                                                {% if reportedMonth==null %}
+                                                    <tr><td colspan='2'>Total</td><td>{{ teacherWorkSetViewItem.totalSum }} / {{ workitemSum }} planned hours</td></tr>
+                                                {% endif %}
+                                                {#                                                <tr><td colspan='5'></td></tr>#}
+                                            </tfoot>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        {% endif %}
+                            {% endfor %}
+                            </div>
+                            {% if reportedMonth==null %}
+                                <h5>SUMMARY TABLE:</h5>
+                                {% set workitemSum = 0 %}
+                                <table class="table table-bordered table-compact table-sm extrasmall" style="width:auto;">
+                                    <thead>
+                                        <tr class='monthsum'>
+                                            <th style='vertical-align:middle;'>
+                                                No.
+                                            </th>
+                                            <th style='vertical-align:middle;'>Work item</th>
+                                                {% for i in 9..29 %}
+                                                <th style='vertical-align:middle;'>
+                                                    {{ columnNames[i] }}
+                                                </th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for teacherWorkSetViewItem in teacherWorkSetViewItems %}
+                                            {% if teacherWorkSetViewItem.teacherWorkItem!=null %}
+                                                {#                        {% set workitemSum = workitemSum+teacherWorkSetViewItem.teacherWorkItem.data[29] %}#}
+                                                <tr>
+                                                    <td style='vertical-align:middle;'>
+                                                        {{ loop.index }}
+                                                    </td>
+                                                    <td style='vertical-align:middle;'>
+                                                        {{ teacherWorkSetViewItem.teacherWorkItem.title }} - {{ teacherWorkSetViewItem.teacherWorkItem.groupLetterCodes }} 
+                                                    </td>
+                                                    {% for i in 9..29 %}
+                                                        <td style='vertical-align:middle;'>
+                                                            {% if teacherWorkSetViewItem.reportedSums[i]>0 %}
+                                                                {{  teacherWorkSetViewItem.reportedSums[i] }}
+                                                            {% endif %}
+                                                            {% if teacherWorkSetViewItem.teacherWorkItem.data[i]>0 %}
+                                                                /
+                                                                {{  teacherWorkSetViewItem.teacherWorkItem.data[i] }}
+                                                            {% endif %}
+                                                        </td>
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endif %}
+                                            {% if teacherWorkSetViewItem.replacedSessionsSums[29]>0 %}
+                                                <tr>
+                                                    <td></td>
+                                                    <td>Substitutions<td>
+                                                        {% for i in 10..29 %}
+                                                        <td style='vertical-align:middle;'>
+                                                            {% if teacherWorkSetViewItem.replacedSessionsSums[i]>0 %}
+                                                                {{  teacherWorkSetViewItem.replacedSessionsSums[i] }}
+                                                            {% endif %}
+                                                        </td>
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <tr>
+                                            <td></td>
+                                            <td style='vertical-align:middle;'>
+                                                TOTAL
+                                            </td>
+                                            {% for i in 9..29 %}
+                                                <td style='vertical-align:middle;'>
+                                                    {% if totalReportedSums[i]>0 %}
+                                                        {{  totalReportedSums[i] }}
+                                                    {% endif %}
+                                                    {% if totalPlannedSums[i]>0 %}
+                                                        /
+                                                        {{  totalPlannedSums[i] }}
+                                                    {% endif %}
+                                                </td>
+                                            {% endfor %}
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <h5>SUBSTITUTIONS RECEIVED:</h5>
+                                <table class="table table-bordered table-compact table-sm extrasmall" style="width:auto;">
+                                    <thead>
+                                    <th>No</th>
+                                    <th>Id</th>
+                                    <th>Item</th>
+                                    <th>Date</th>
+                                    <th>Substitute</th>
+                                    <th>Hours</th>
+                                </thead>
+                                <tbody>
+                                    {% set substituteSum = 0 %}
+                                    {% set order = 1 %}
+                                    {% for teacherWorkSetViewItem in teacherWorkSetViewItems %}
+                                        {#                                        Size: {{ teacherWorkSetViewItem.replacedSessions|length }} ID {{ teacherWorkSetViewItem.teacherWorkItem.id }}#}
+                                        {% if teacherWorkSetViewItem.teacherWorkItem!=null %}
+                                            {% for replacedSession in teacherWorkSetViewItem.replacedSessions %}
+                                                {% if replacedSession.teacher.id != teacher.id %}
+                                                    <tr>
+                                                        <td>{{ order  }}</td>
+                                                        <td>{{ teacherWorkSetViewItem.teacherWorkItem.id  }}</td>
+                                                        <td>
+                                                            {{ teacherWorkSetViewItem.teacherWorkItem.title  }}
+                                                        </td>
+                                                        <td>
+                                                            {{ replacedSession.courseDay.date|date('d.m.Y') }}
+                                                        </td>
+                                                        <td>
+                                                            {{ replacedSession.teacher.fullname }}
+                                                        </td>
+                                                        <td>
+                                                            {{ replacedSession.hours }}
+                                                            {% set substituteSum = substituteSum + replacedSession.hours %}
+                                                            {% set order = order + 1 %}
+                                                            {% if is_granted("ROLE_SPECIALIST") %}
+                                                                &nbsp;&nbsp;&nbsp;<a href="javascript:deleteScheduleChange({{ replacedSession.scheduleChange.id }},'srinfo');">Delete</a>
+                                                                {#                                                            {{ replacedSession.scheduleChange.id }}#}
+                                                            {% endif %}
+                                                            <span id='srinfo{{ replacedSession.scheduleChange.id }}'></span>
+                                                        </td>
+                                                    </tr>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th>Total hours</th>
+                                        <th></th>
+                                        <th></th>
+                                        <th>
+                                            {{ substituteSum }}
+                                            {% if is_granted("ROLE_SPECIALIST") %}
+                                                &nbsp;&nbsp;&nbsp;<a href="/faculty/teacherworkset/viewschedulechanges/{{ teacherWorkSet.id }}/{{ year }}/{{ semester }}">Schedule Changes</a>
+                                            {% endif %}
+                                        </th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                            <h5>SUBSTITUTIONS DELIVERED:</h5>
+                            <table class="table table-bordered table-compact table-sm extrasmall" style="width:auto;">
+                                <thead>
+                                <th>No</th>
+                                <th>Id</th>
+                                <th>Item</th>
+                                <th>Date</th>
+                                <th>Substitute</th>
+                                <th>Hours</th>
+                            </thead>
+                            <tbody>
+                                {% set substituteSum = 0 %}
+                                {% set order = 1 %}
+                                {% for teacherWorkSetViewItem in teacherWorkSetViewItems %}
+                                    {#                                        Size: {{ teacherWorkSetViewItem.replacedSessions|length }} ID {{ teacherWorkSetViewItem.teacherWorkItem.id }}#}
+                                    {% if teacherWorkSetViewItem.teacherWorkItem!=null %}
+                                        {% for replacedSession in teacherWorkSetViewItem.replacedSessions %}
+                                            {% if replacedSession.teacher.id == teacher.id %}
+                                                <tr>
+                                                    <td>{{ order  }}</td>
+                                                    <td>{{ teacherWorkSetViewItem.teacherWorkItem.id  }}</td>
+                                                    <td>
+                                                        {{ teacherWorkSetViewItem.teacherWorkItem.title  }}
+                                                    </td>
+                                                    <td>
+                                                        {{ replacedSession.courseDay.date|date('d.m.Y') }}
+                                                    </td>
+                                                    <td>
+                                                        {{ replacedSession.teacher.fullname }}
+                                                    </td>
+                                                    <td>
+                                                        {{ replacedSession.hours }}
+                                                        {% set substituteSum = substituteSum + replacedSession.hours %}
+                                                        {% set order = order + 1 %}
+                                                        {% if is_granted("ROLE_SPECIALIST") %}
+                                                            &nbsp;&nbsp;&nbsp;<a href="javascript:deleteScheduleChange({{ replacedSession.scheduleChange.id }},'srinfo');">Delete</a>
+                                                            {#                                                            {{ replacedSession.scheduleChange.id }}#}
+                                                        {% endif %}
+                                                        <span id='srinfo{{ replacedSession.scheduleChange.id }}'></span>
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <th>Total hours</th>
+                                    <th></th>
+                                    <th></th>
+                                    <th>
+                                        {{ substituteSum }} 
+                                        {% if is_granted("ROLE_SPECIALIST") %}
+                                            &nbsp;&nbsp;&nbsp;<a href="/faculty/teacherworkset/viewschedulechanges/{{ teacherWorkSet.id }}/{{ year }}/{{ semester }}">Schedule Changes</a>
+                                        {% endif %}
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        {#<h5>SUBSTITUTIONS DELIVERED:</h5>
+                        <table class="table table-bordered table-compact table-sm extrasmall" style="width:auto;">
+                            <thead>
+                                <tr>
+                                    <th>Course name</th>
+                                    <th>Substituted for</th>
+                                    <th>Old date</th>
+                                    <th>New date</th>
+                                    <th>Old session</th>
+                                    <th>New session</th>
+                                    <th>Type</th>
+                                    <th>Hours</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set substituteSum = 0 %}
+                                {% for replacingSession in replacingSessions %}
+                                    <tr>
+                                        <td>{{ replacingSession.scheduleItem.taughtCourse.nameEnglish  }}</td>
+                                        <td>
+                                            <a href='/faculty/teacherjournalnew/{{  replacingSession.scheduleItem.taughtCourse.teacher.id }}/0/{{ year }}/{{ semester }}'>
+                                                {{ replacingSession.scheduleItem.taughtCourse.teacher.shortFullname }}  
+                                            </a>                                                
+                                        </td>
+                                        <td>
+                                            {{ replacingSession.date|date('d.m.Y') }}
+                                        </td>
+                                        <td>
+                                            {{ replacingSession.newDate|date('d.m.Y') }}
+                                        </td>
+                                        <td>
+                                            {{ replacingSession.session }}  
+                                        </td>
+                                        <td>
+                                            {{ replacingSession.newSession }}  
+                                        </td>
+                                        <td>
+                                            {{ replacingSession.classType.nameEnglish }}  
+                                        </td>
+                                        <td>
+                                            {{ replacingSession.classType.hours }}
+                                            {% set substituteSum = substituteSum + replacingSession.classType.hours %}
+                                            {% if is_granted("ROLE_SPECIALIST") %}
+                                                &nbsp;&nbsp;&nbsp;<a href="javascript:deleteScheduleChange({{ replacingSession.id }},'sdinfo');">Delete</a>
+                                            {% endif %}
+                                            <span id='sdinfo{{ replacingSession.id }}'></span>
+                                        </td>
+                                    </tr>    
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td>Total hours</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>{{ substituteSum }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>#}
+                    {% endif %}
+                    <br><br><br>
+                    {% if is_granted("ROLE_SPECIALIST") %}
+                        <div style="font-size:12px;" id="output{{ teacher.id }}">
+                        </div>
+                        <div id="fastinput{{ teacher.id }}">
+                            <form name="fastform{{ teacher.id }}" id="fasftform{{ teacher.id }}">
+                                <textarea name="data" id="data{{ teacher.id }}" class="small" style="width:100%;height:200px;"></textarea>
+                                <br>
+                                <input style="width:50px;" type="text" id="departmentId{{ teacher.id }}" title="departmentId" value="{{ teacherWorkSet.department.id }}">
+                                <input style="width:50px;" type="text" id="teacherId{{ teacher.id }}" title="teacherId" value="{{ teacherWorkSet.teacher.id }}">
+                                <input style="width:50px;" type="text" id="teacherWorkSetId{{ teacher.id }}" title="teacherWorkSetId" value="{{ teacherWorkSet.id }}">
+                                <input style="width:50px;" type="text" id="year{{ teacher.id }}" title="year" value="{{ year }}">
+                                <input style="width:50px;" type="text" id="yearpart{{ teacher.id }}" title="yearpart" value="{{ semester }}">
+                                <input style="width:50px;" type="text" id="commit{{ teacher.id }}" title="commit" value="0">
+                                <input style="width:50px;" type="text" id="addtaughtcourse{{ teacher.id }}" title="addtaughtcourse" value="0">
+                                <a href="javascript:commitExpress({{ teacher.id }});" class="small">Commit</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                <a href="javascript:validateExpress({{ teacher.id }});" class="small">Check</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                <a href="javascript:addCourse({{ teacher.id }});" class="small">Add Course</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+                            </form>
+                            <br><br>
+                        </div>
+                    {% endif %}
+                    {% else %}
+                        No workset found for {{ teacher.fullname }}!
+                        <a href="/faculty/teacherworkset/editinteacher/0/{{ teacher.id }}/{{ year }}/0/{{ teacher.department.id }}">Click here</a> to add!
+                        {% endif %}
+                            <div id="reported_work_form_div" title="Add reported work">
+                                <form id="reported_work_form">
+                                    <fieldset>
+                                        <div class="form-group row">
+                                            <label class="col-form-label col-sm-4 required" for="reported_work_form_type">Type</label>
+                                            <div class="col-sm-10">
+                                                <select id="reported_work_form_type" name="reported_work_form_type" class="form-control">
+                                                    <option value="15">Berkidiji sapak</option>
+                                                    <option value="16">Hasap</option>
+                                                    <option value="17">Arasynag</option>
+                                                    <option value="18">Jemleýji synag</option>
+                                                    <option value="19">Döwlet synagy</option>
+                                                    <option value="21">Tabşyryklary barlamak</option>
+                                                    <option value="22">Önümçilik tejribeligine ýolbaşçylyk</option>
+                                                    <option value="23">Diplom işine ýolbaşçylyk</option>
+                                                    <option value="24">Diplom işini goramak</option>
+                                                    <option value="25">Ders bäsleşiklerine taýýarlamak</option>
+                                                    <option value="26">Sapaklara gatnaşmak</option>
+                                                    <option value="27">Fakultete/kafedra ýolbaşçylyk</option>
+                                                    <option value="28">Syn ýazmak</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-form-label col-sm-4 required" for="reported_work_form_amount">Amount</label>
+                                            <div class="col-sm-10">
+                                                <input type="number" id="reported_work_form_amount" name="reported_work_form_amount" required="required" style="width:100px;" class="form-control" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-form-label col-sm-4 required" for="reported_work_form_date">Date</label>
+                                            <div class="col-sm-10">
+                                                <input type="text" id="reported_work_form_date" name="reported_work_form_date" required="required" style="width:180px;" class="form-control" value="{{ "now"|date("d-m-Y") }}"/>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-form-label col-sm-4" for="reported_work_form_note">Note</label>
+                                            <div class="col-sm-10">
+                                                <textarea id="reported_work_form_note" name="reported_work_form_note" class="form-control"></textarea>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="reported_work_form_id" name="reported_work_form_id" value="0">
+                                        <input type="hidden" id="reported_work_form_teacher" name="reported_work_form_teacher" value="0">
+                                        <input type="hidden" id="reported_work_form_workitem" name="reported_work_form_workitem" value="0">
+                                        <input type="hidden" id="reported_work_form_action" name="reported_work_form_action" value="new">
+                                        <input type="hidden" id="reported_works_table_id" value="0">
+                                        <!-- Allow form submission with keyboard without duplicating the dialog button -->
+                                        <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+                                    </fieldset>
+                                </form>
+                                <div id="reported_work_form_error"></div>
+                            </div>
+                            {% endblock %}
+                                {% block customjs %}
+                                    <script type="text/javascript">
+                                        $(document).ready(function () {
+                                            $("#reported_work_form_date").datepicker({dateFormat: "dd-mm-yy"});
+
+                                            dialog = $("#reported_work_form_div").dialog({
+                                                autoOpen: false,
+                                                width: 500,
+                                                modal: true,
+                                                buttons: {
+                                                    "Add reported work": addReportedWork,
+                                                    Cancel: function () {
+                                                        dialog.dialog("close");
+                                                    }
+                                                },
+                                                close: function () {
+                                                    form[0].reset();
+                                                    //allFields.removeClass("ui-state-error");
+                                                }
+                                            });
+                                            form = dialog.find("form").on("submit", function (event) {
+                                                event.preventDefault();
+                                                addReportedWork();
+                                            });
+                                        });
+
+                                        function openReportedWorkForm(id, type, amount, date, workitem, teacher, note)
+                                        {
+                                            $("#reported_work_form_id").val(id);
+                                            $("#reported_work_form_type").val(type);
+                                            $("#reported_work_form_amount").val(amount);
+                                            $("#reported_work_form_date").val(date);
+                                            $("#reported_work_form_note").val(note);
+                                            $("#reported_work_form_workitem").val(workitem);
+                                            $("#reported_work_form_teacher").val(teacher);
+                                            $("#reported_works_table_id").val(workitem);
+                                            if (id > 0)
+                                            {
+                                                $("#reported_work_form_action").val("update");
+                                            }
+                                            dialog.dialog("open");
+                                        }
+
+                                        function addReportedWork() {
+                                            reportedWorksTableId = $("#reported_works_table_id").val();
+                                            reportedWorkId = $("#reported_work_form_id").val();
+                                            action = $("#reported_work_form_action").val();
+                                            var fd = new FormData($("#reported_work_form")[0]);
+                                            //fd.append('id', id);
+                                            $.ajax({
+                                                url: '/faculty/reportedwork/addexpress',
+                                                type: 'POST',
+                                                data: fd,
+                                                success: function (data) {
+                                                    console.log(data);
+                                                    arrValues = data.split("|");
+                                                    if (action == "new")
+                                                    {
+                                                        $("#reportedWorksTable" + reportedWorksTableId + " tbody").append("<tr style='color: green;font-weight:bold;'>" +
+                                                                "<td>" + arrValues[1] + "</td>" +
+                                                                "<td>" + arrValues[2] + "</td>" +
+                                                                "<td>" + arrValues[3] + "</td>" +
+                                                                "</tr>");
+                                                    } else
+                                                    {
+                                                        $("#reportedWorkRow" + reportedWorkId).html("<td>" + arrValues[1] + "</td>" +
+                                                                "<td>" + arrValues[2] + "</td>" +
+                                                                "<td>" + arrValues[3] + "</td>");
+                                                    }
+                                                    dialog.dialog("close");
+                                                },
+                                                error: function (request, status, error) {
+                                                    console.log(request.responseText);
+                                                    $('#reported_work_form_error').html(request.responseText);
+                                                },
+                                                cache: false,
+                                                contentType: false,
+                                                processData: false
+                                            });
+
+                                            return true;
+                                        }
+
+                                        function deleteScheduleChange(id, infoname)
+                                        {
+                                            var r = confirm("Do you really want to delete schedule change? Item id: " + id);
+                                            if (r)
+                                            {
+                                                var fd = new FormData();
+                                                fd.append('id', id);
+                                                $.ajax({
+                                                    url: '/faculty/schedulechange/delete',
+                                                    type: 'POST',
+                                                    data: fd,
+                                                    success: function (data) {
+                                                        console.log(data);
+                                                        $("#" + infoname + id).html(data.Result);
+                                                    },
+                                                    error: function (request, status, error) {
+                                                        console.log(request.responseText);
+                                                        $('#' + infoname + id).html(request.responseText);
+                                                    },
+                                                    cache: false,
+                                                    contentType: false,
+                                                    processData: false
+                                                });
+                                            }
+                                        }
+
+                                        function deleteReportedWork(id)
+                                        {
+                                            var r = confirm("Do you really want to delete reported work? Item id: " + id);
+                                            if (r)
+                                            {
+                                                var fd = new FormData();
+                                                fd.append('id', id);
+                                                $.ajax({
+                                                    url: '/faculty/reportedwork/delete/' + id,
+                                                    type: 'POST',
+                                                    data: fd,
+                                                    success: function (data) {
+                                                        alert(data);
+                                                    },
+                                                    error: function (request, status, error) {
+                                                        console.log(request.responseText);
+                                                        //$('#reported_work_form_error').html(request.responseText);
+                                                    },
+                                                    cache: false,
+                                                    contentType: false,
+                                                    processData: false
+                                                });
+                                            }
+                                        }
+
+                                        function changeScheduleChangeStatus(id, currentStatus)
+                                        {
+                                            //console.log('working');
+                                            //return;
+                                            var newStatus = prompt("Enter new status?", currentStatus);
+                                            //var r = confirm("Do you confirm?");
+                                            if (newStatus)
+                                            {
+                                                p = '/faculty/schedulechange/updateitem/' + id + '/status/' + newStatus;
+
+                                                var inputs = null;
+                                                console.log(p);
+                                                $.ajax({
+                                                    type: "GET",
+                                                    url: p,
+                                                    data: inputs,
+                                                    success: function (msg) {
+                                                        console.log(msg);
+                                                        $('#info' + id).html(msg);
+                                                    },
+                                                    error: function (request, status, error) {
+                                                        console.log(request.responseText);
+                                                        $('#info' + id).html(request.responseText);
+                                                    },
+                                                });
+                                            }
+                                        }
+
+                                        function changePeriod(item_number, item_id, currentPeriod)
+                                        {
+                                            //console.log('working');
+                                            //return;
+                                            var newPeriod = prompt("Enter new period?", currentPeriod);
+                                            //var r = confirm("Do you confirm?");
+                                            if (newPeriod)
+                                            {
+                                                p = '/faculty/scheduleitem/updateitem/' + item_id + '/period/' + newPeriod;
+                                                var inputs = null;
+                                                console.log(p);
+                                                //return;
+                                                $.ajax({
+                                                    type: "GET",
+                                                    url: p,
+                                                    data: inputs,
+                                                    success: function (msg) {
+                                                        console.log(msg);
+                                                        $('#info' + item_id + '_' + item_number).html(msg);
+                                                    }});
+                                            }
+                                        }
+
+                                        function specialAction(action, item_number, item_id)
+                                        {
+                                            //console.log('working');
+                                            //return;
+                                            var r = confirm("Do you confirm?");
+                                            if (r)
+                                            {
+                                                p = '/faculty/scheduleitem/specialAction/' + action + '/' + item_id;
+                                                var inputs = null;
+                                                console.log(p);
+                                                //return;
+                                                $.ajax({
+                                                    type: "GET",
+                                                    url: p,
+                                                    data: inputs,
+                                                    success: function (msg) {
+                                                        console.log(msg);
+                                                        $('#info' + item_id + '_' + item_number).html(msg);
+                                                    },
+                                                    error: function (request, status, error) {
+                                                        console.log(request.responseText);
+                                                        $('#info' + item_id + '_' + item_number).html(request.responseText);
+                                                    },
+                                                });
+                                            }
+                                        }
+
+                                        function changeAllScheduleItems(action, course_id, start_date, end_date)
+                                        {
+                                            var newStartDate = prompt("Enter new start date?", start_date);
+                                            var newEndDate = prompt("Enter new end date?", end_date);
+                                            //var r = confirm("Do you confirm?");
+                                            if (newStartDate && newEndDate)
+                                            {
+                                                var fd = new FormData();
+                                                fd.append('action', action);
+                                                fd.append('start_date', newStartDate);
+                                                fd.append('end_date', newEndDate);
+                                                fd.append('course_id', course_id);
+                                                $.ajax({
+                                                    url: '/faculty/scheduleitem/taughtCourseAction',
+                                                    type: 'POST',
+                                                    data: fd,
+                                                    success: function (data) {
+                                                        $('#courseInfo' + course_id).html(data);
+                                                    },
+                                                    error: function (request, status, error) {
+                                                        console.log(request.responseText);
+                                                        $('#courseInfo' + course_id).html(request.responseText);
+                                                    },
+                                                    cache: false,
+                                                    contentType: false,
+                                                    processData: false
+                                                });
+                                            }
+                                        }
+
+                                        function copyToCourse(action, course_id)
+                                        {
+                                            var newCourseId = prompt("Enter new course id?)", 0);
+                                            if (parseInt(newCourseId) > 0)
+                                            {
+                                                var fd = new FormData();
+                                                fd.append('action', 2);
+                                                fd.append('course_id', course_id);
+                                                fd.append('new_course_id', newCourseId);
+                                                $.ajax({
+                                                    url: '/faculty/scheduleitem/taughtCourseAction',
+                                                    type: 'POST',
+                                                    data: fd,
+                                                    success: function (data) {
+                                                        $('#courseInfo' + course_id).html(data);
+                                                    },
+                                                    error: function (request, status, error) {
+                                                        console.log(request.responseText);
+                                                        $('#courseInfo' + course_id).html(request.responseText);
+                                                    },
+                                                    cache: false,
+                                                    contentType: false,
+                                                    processData: false
+                                                });
+                                            }
+                                        }
+
+                                        function scheduleFastAdd(action, course_id, groups, start_date, end_date)
+                                        {
+                                            var codes = prompt("Enter schedule codes (scheduleid;class type;groups;codes)?)", '8;1;' + groups + ';0;');
+                                            if (parseInt(codes) > 0)
+                                            {
+                                                var fd = new FormData();
+                                                fd.append('action', 3);
+                                                fd.append('course_id', course_id);
+                                                fd.append('schedule_codes', codes);
+                                                fd.append('start_date', start_date);
+                                                fd.append('end_date', end_date);
+                                                $.ajax({
+                                                    url: '/faculty/scheduleitem/taughtCourseAction',
+                                                    type: 'POST',
+                                                    data: fd,
+                                                    success: function (data) {
+                                                        //console.log('#courseInfo' + course_id);
+                                                        //console.log(msg);
+                                                        $('#courseInfo' + course_id).html(data);
+                                                    },
+                                                    error: function (request, status, error) {
+                                                        console.log(request.responseText);
+                                                        $('#courseInfo' + course_id).html(request.responseText);
+                                                    },
+                                                    cache: false,
+                                                    contentType: false,
+                                                    processData: false
+                                                });
+                                            }
+                                        }
+                                        function commitExpress(id)
+                                        {
+                                            $('#commit' + id).val(1);
+                                            $('#addtaughtcourse' + id).val(0);
+                                            addExpress(id);
+                                        }
+
+                                        function validateExpress(id)
+                                        {
+                                            $('#commit' + id).val(0);
+                                            $('#addtaughtcourse' + id).val(0);
+                                            addExpress(id);
+                                        }
+
+                                        function addCourse(id)
+                                        {
+                                            $('#addtaughtcourse' + id).val(1);
+                                            addExpress(id);
+                                        }
+
+                                        function addExpress(id)
+                                        {
+                                            p = "/faculty/scheduleitem/addexpress";
+                                            var fd = new FormData();
+                                            fd.append('data', $('#data' + id).val());
+                                            fd.append('teacherWorkSetId', $('#teacherWorkSetId' + id).val());
+                                            fd.append('year', $('#year' + id).val());
+                                            fd.append('yearpart', $('#yearpart' + id).val());
+                                            fd.append('commit', $('#commit' + id).val());
+                                            fd.append('addtaughtcourse', $('#addtaughtcourse' + id).val());
+                                            console.log('processing: fastform' + id);
+
+                                            $.ajax({
+                                                url: p,
+                                                type: 'POST',
+                                                data: fd,
+                                                success: function (data) {
+                                                    console.log(data);
+                                                    $('#output' + id).html(data);
+                                                },
+                                                error: function (request, status, error) {
+                                                    console.log(request.responseText);
+                                                    $('#output' + id).html(request.responseText);
+                                                },
+                                                cache: false,
+                                                contentType: false,
+                                                processData: false
+                                            });
+                                        }
+
+                                        function updateGradingType(id)
+                                        {
+                                            $('#mainModalTitle').html('Update grading type');
+                                            $('#mainModalBody').html('Updating grading type...');
+                                            $('#mainModal').modal('show');
+                                            p = "/faculty/taughtcourse/updatecourse/" + id + "/gradingType/1";
+                                            var inputs = $("#mainform").serialize();
+                                            //console.log(inputs);
+                                            //return;
+                                            $.ajax({
+                                                type: "POST",
+                                                url: p,
+                                                data: inputs,
+                                                success: function (msg) {
+                                                    //console.log(msg);
+                                                    $('#mainModalBody').html(msg);
+                                                    $('#mainModal').delay(2000).fadeOut(1000, function () {
+                                                        $('#mainModal').modal('hide');
+                                                    });
+                                                },
+                                                error: function (request, status, error) {
+                                                    //console.log(request.responseText);
+                                                    $('#mainModalBody').html(request.responseText);
+                                                },
+                                            });
+                                        }
+
+
+
+                                    </script>
+                                {% endblock %}

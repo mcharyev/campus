@@ -1,0 +1,130 @@
+{% extends 'library/anonymousmain.html.twig' %}
+{% block moduletitle %} Main Library{% endblock %}
+{% block customcss %}
+    <style>
+        .path
+        {
+            font-size:1.5em;
+        }
+        .items {
+            padding: 1rem;
+            border: 1px solid green;
+            overflow: hidden;
+        }
+
+        .item {
+            border:0px solid gray; 
+            font-size:12pt;
+            margin:1em;
+            background-size: cover;
+            vertical-align: top; /* here */
+            float: left;
+            clear: right;
+            display: inline-block;
+            -webkit-box-shadow: 0px 10px 13px -7px #000000, 5px 5px 15px 5px rgba(0,0,0,0); 
+            box-shadow: 0px 10px 13px -7px #000000, 5px 5px 15px 5px rgba(0,0,0,0);
+        }
+
+        .item:hover{
+            -webkit-transform: scale(1.1);
+            -ms-transform: scale(1.1);
+            transform: scale(1.1);
+            transition: 0.3s ease;
+            cursor: pointer;
+            
+        }
+
+        .itempicture {
+            display: block;
+            width:200px; 
+            height: 250px; 
+            border:1px solid gray; 
+            background-size: cover;
+        }
+
+        .itemname {
+            display: block;
+            width:170px;
+            height: 60px; 
+            overflow-wrap: break-word;
+            font-size: 0.8em;
+            color: #444444;
+            color: #333333;
+            padding: 0.5em;
+
+        }
+
+        .folders 
+        {
+            border:0px solid blue;
+            clear:right;
+            overflow: auto;
+            padding:1em;
+        }
+        .files
+        {
+            clear:left;
+        }
+
+        .folderitemname
+        {
+            display:block;
+            float:left;
+            padding:0.5em;
+        }
+
+    </style>
+{% endblock %}
+{% block main %}
+    <center><h2>IUHD Electronic books Browser</h2></center>
+    <!--<form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='main_title'>Title</option>
+                <option value='secondary_title'>Subtitle</option>
+                <option value='author'>Author</option>
+                <option value='call_number'>Call number</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form>-->
+    <!--<a href='/library/libraryitem/new'>New</a>-->
+    <div id='error'>
+    </div>
+    <div id='main'>
+        {{ content|raw }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+        });
+
+        function showerror(str)
+        {
+            $('#error').html(str);
+        }
+
+        function deleteitem(strUrl)
+        {
+            if (window.confirm("Really delete?"))
+            {
+                window.location.href = "/ebookbrowser/deleteitem/{{ libraryUnit.id }}/" + strUrl;
+            }
+        }
+
+
+        function openbook(strUrl)
+        {
+            window.location.href = "/ebookbrowser/ebookview/{{ libraryUnit.id }}/?file=" + strUrl;
+        }
+
+        function opendir(strUrl)
+        {
+            window.location.href = "/ebookbrowser/browse/{{ libraryUnit.id }}/" + strUrl;
+        }
+    </script>
+{% endblock %}

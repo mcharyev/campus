@@ -1,0 +1,59 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .main {background-color:#ebebeb;}
+        .boldclass {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Analytics{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div class="no-print" style="margin:auto;">
+        <h3>Analytics</h3>
+        {% if is_granted("ROLE_SPECIALIST") %}
+            <a class="btn btn-outline-success" href='/faculty/analytics/major_count'>Major counts</a> 
+            <a class="btn btn-outline-success" href='/faculty/analytics/group_count'>Group counts</a> 
+            <a class="btn btn-outline-success" href='/faculty/analytics/faculty_count'>Faculty counts</a>
+            <a class="btn btn-outline-success" href='/faculty/analytics/alumni'>Alumni</a>
+            <a class="btn btn-outline-success" href='/faculty/analytics/alumniemployment'>Alumni Employment</a>
+            <a class="btn btn-outline-success" href='/faculty/analytics/alumniemployment/{{ year }}'>Alumni</a>
+            <a class="btn btn-outline-success" href='/faculty/analytics/velayat_count'>Velayat counts</a>
+            <a class="btn btn-outline-success" href='/faculty/analytics/age_count'>Age counts</a>
+            <a class="btn btn-outline-success" href='/faculty/analytics/hostel_count'>Hostel counts</a>
+            <!--<a class="btn btn-outline-success" href='workloads.php?action=department_workloads_all'>Department workloads</a>-->
+        {% endif %}
+        {% if is_granted("ROLE_SPECIALIST") %}
+            <p>
+                <br><a href='/faculty/facultyanalytics/faculty_students_year'>Fakultetler we okuw ýyllary boýunça talyplaryň sany barada</a>
+                <br><a href='/faculty/facultyanalytics/faculty_students_gender_year'>Fakultetleriniň talyplarynyň oglan-gyz sany barada</a>
+                <br><a href='/faculty/facultyanalytics/faculty_students_velayat'>Welaýatlar boýunça talyplaryň sany</a>
+                <br><a href='/faculty/departmentworkitem/university/{{ year }}'>Uniwersitet sagat hasaby</a>
+                <br><a href='/faculty/alldepartmentworksets/{{ year }}'>Uniwersitet hasapnamalary</a>
+                <br>
+                <br><a href='/information_text/view/fakultet_talyp_san'>Fakultetler we okuw ýyllary boýunça talyplaryň sany barada</a>
+            {% endif %}
+    </div>
+    <div>
+        {{ analytics_content|raw }}
+    </div>
+    <br><br><br>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#mainTable').DataTable({
+                dom: 'Bfrtip',
+                pageLength: 50,
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    ['10 rows', '25 rows', '50 rows', 'Show all']
+                ],
+                buttons: [
+                    'pageLength', 'copy', 'excel', 'pdf'
+                ]
+            });
+        });
+    </script>
+{% endblock %}

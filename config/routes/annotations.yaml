@@ -1,0 +1,12 @@
+controllers_app:
+    resource: ../../src/Controller/
+    type: annotation
+controllers_hr:
+    resource: '../src/Hr/Controller/'
+    type:     annotation
+controllers_registrar:
+    resource: '../src/Registrar/Controller/'
+    type:     annotation
+controllers_kiosk:
+    resource: '../src/Kiosk/Controller/'
+    type:     annotation

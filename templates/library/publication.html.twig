@@ -1,0 +1,362 @@
+{% extends 'library.html.twig' %}
+
+{% block moduletitle %}Publication{% endblock %}
+{% block customcss %}
+    <style>
+        .photo {width:70px;}
+        #QuickImageLinks
+        {
+            text-align: center;
+        }
+
+        .jtable-dialog-form input[type="text"]
+        {
+            min-width: 200px;
+        }
+
+        .jtable-dialog-form {
+            display: block;
+            width: 600px;
+            -moz-column-gap:30px;
+            -webkit-column-gap:30px;
+            column-gap:30px;
+            -moz-column-count:2;
+            -webkit-column-count:2;
+            column-count:2;
+        }
+    </style>
+{% endblock %}
+{% block main %}
+    <h5>{{ libraryUnit.nameEnglish }}</h5>
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='title'>Title</option>
+                <option value='publication'>Publication</option>
+                <option value='call_number'>Call number</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#main').jtable({
+                title: 'Publication',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'd.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/library/publication/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        //console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        createAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                console.log(postData)
+                                $.ajax({
+                                    url: '/library/publication/create',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        $("#error").html(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        console.log(data.responseText);
+                                        $("#error").html(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        updateAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/library/publication/update',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data.responseText);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        console.log(data.responseText);
+                                        showerror(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/library/publication/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'T/b',
+                            create: false,
+                            edit: false,
+                            width: '1%'
+                        },
+                        id: {
+                            title: 'ID',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            width: '1%',
+                            list: false
+                        },
+                        author_id: {
+                            title: 'Author',
+                            options: '/valuepairs/userwithid/id/lastname,firstname,system/id ASC',
+                            width: '3%',
+                            defaultValue: '1',
+                            list: true
+                        },
+                        title: {
+                            title: 'Makalaň ady',
+                            type: 'textarea',
+                            width: '5%',
+                            defaultValue: ''
+                        },
+                        publication: {
+                            title: 'Neşiriň ady',
+                            type: 'textarea',
+                            width: '5%',
+                            defaultValue: '',
+                            list: true
+                        },
+                        date_published: {
+                            title: 'Neşir edilen senesi',
+                            type: 'date',
+                            width: '2%',
+                            displayFormat: 'dd-mm-yy',
+                            edit: false
+                        },
+                        actions: {
+                            title: 'Faýly',
+                            create: false,
+                            edit: false,
+                            width: '2%',
+                            display: function (data) {
+                                if(data.record.file)
+                                {
+                                    return "<a target=\"_blank\" href=\"/library/publication/view/" + data.record.file + "\">" + data.record.file + "</a>  <div id='drop" + data.record.id + "'></div>";
+                                } else {
+                                    return "ýok  <div id='drop" + data.record.id + "'></div>";
+                                }
+                                
+                            },
+                            sorting: false,
+                            list: true
+                        },
+                        date_updated: {
+                            title: 'Girizilen senesi',
+                            type: 'date',
+                            width: '2%',
+                            displayFormat: 'dd-mm-yy',
+                            list: false
+                        },
+                        recorder_id: {
+                            title: 'Kitaphanaçy',
+                            options: '/valuepairs/user/id/lastname,firstname/id ASC',
+                            width: '3%',
+                            defaultValue: '1',
+                            list: false,
+                            edit: false
+                        },
+                        attached_file: {
+                            title: 'Elektron faýly',
+                            input: function (data) {
+                                p_id = 0;
+                                if (data.record)
+                                    p_id = data.record.item_id;
+                                str = '';
+                                str += "<div id='filelist'></div>";
+                                if (p_id != 0)
+                                {
+                                    str += "<form id=\"fileform\" enctype=\"multipart/form-data\">";
+                                    str += "<input name=\"file\" type=\"file\" multiple />";
+                                    str += "</form><br><button type=\"button\" onclick=\"uploadfile(" + data.record.id + "," + data.record.call_number_original + ");\">Faýl ýükle</button> ";
+                                    str += "<button type=\"button\" onclick=\"deletefile(" + data.record.id + "," + data.record.call_number_original + ");\">Faýl aýyr</button><br>";
+                                }
+                                return str;
+                            },
+                            list: false
+                        }
+                    },
+                    recordsLoaded: function ()
+                    {
+                        ['dragenter', 'dragover', 'dragleave'].forEach(eventName => {
+                            $('tr.jtable-data-row').on(eventName, preventDefaults, false);
+                            //                   $('.imagefield').parent().on(eventName, preventDefaults, false);
+                            //console.log(eventName);
+                        })
+
+                        $('tr.jtable-data-row').on('drop', function (e) { //use on if jQuery 1.7+
+                            //console.log($(this).data('record-key'));
+                            fileDropped(e, $(this).data('record-key'));
+                        });
+                    },
+                    formCreated: function (event, data) {
+                        if (data.record)
+                        {
+                            listfile(data.record.id);
+                        }
+                    }
+
+                });
+                $('#main').jtable('load');
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault()
+                e.stopPropagation()
+            }
+
+            function fileDropped(e, id) {
+                //console.log('working');
+                $("#drop" + id).html('Loading...');
+                e.preventDefault();  //prevent form from submitting
+                //return;
+                //console.log(e.originalEvent.dataTransfer.files);
+                file0 = e.originalEvent.dataTransfer.files[0];
+                //return;
+                var fd = new FormData();
+                fd.append('id', id);
+                fd.append('file', file0);
+                $.ajax({
+                    url: '/library/publication/uploaditemfile',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                        $("#drop" + id).html(data);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+            function uploadfile(id, number)
+            {
+                //console.log('working');
+                //return;
+                var fd = new FormData($("#fileform")[0]);
+                fd.append('id', id);
+                fd.append('number', number);
+                $.ajax({
+                    url: '/library/publication/uploaditemfile',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                        $("#filelist").html(data);
+                    },
+                    error: function (data) {
+                        console.log(data.responseText);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+            function deletefile(id, number)
+            {
+                var r = confirm("Faýly aýyrmalymy?");
+                if (r)
+                {
+                    var fd = new FormData();
+                    fd.append('action', 'deleteitemfile');
+                    fd.append('id', id);
+                    fd.append('number', number);
+                    //console.log(fd);
+                    $.ajax({
+                        url: '/library/publication/deleteitemfile',
+                        type: 'POST',
+                        data: fd,
+                        success: function (data) {
+                            $('#filelist').html(data);
+                        },
+                        error: function (data) {
+                            console.log(data.responseText);
+                        },
+                        cache: false,
+                        contentType: false,
+                        processData: false
+                    });
+                }
+            }
+
+            function listfile(id)
+            {
+                var fd = new FormData();
+                fd.append('id', id);
+                $.ajax({
+                    url: '/library/publication/listitemfile',
+                    type: 'POST',
+                    data: fd,
+                    success: function (data) {
+                        $('#filelist').html(data);
+                    },
+                    error: function (data) {
+                        console.log(data.responseText);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+
+            function search()
+            {
+                window.location.href = "/library/publication/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+    </script>
+{% endblock %}

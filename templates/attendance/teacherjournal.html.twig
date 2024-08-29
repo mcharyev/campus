@@ -1,0 +1,324 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .small {font-size:12px;}
+        .today_class {background-color:green;color:#fff;}
+        .freeday_class {background-color:red;color:#fff;}
+        .changed_class {background-color:darkorange;color:#fff;}
+        .coverday_class {background-color:blue;color:#fff;}
+        .everyday_class {}
+        .monthsum {background-color:#f5f5f5;font-weight:bold;}
+        .coursename {font-size:1.5em; font-weight:bold;}
+        b {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Teacher Journal:{% endblock %}
+{% block main %}
+    <h4>Teacher Journal: {{ teacher.fullname }} </h4>
+    <h6><span class='bold'>Faculty:</span> {{ teacher.department.faculty.nameEnglish }}</h6>
+    <h6><span class='bold'>Dean:</span> {{ teacher.department.faculty.dean.fullname }}</h6>
+    <h6><span class='bold'>Department: </span>{{ teacher.department.nameEnglish }}</h6>
+    <h6><span class='bold'>Department Head:</span> {{ teacher.department.departmenthead.fullname }}</h6>
+    <h6><span class='bold'>Link:</span> 
+        <a href="/faculty/scheduledisplay/teacher/{{ teacher.id }}">Schedule</a> |
+        <a href='/faculty/teacherworkreport/{{ teacher.id }}/{{ year }}/{{ semester }}/0'>Work report</a> |
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/0'>Personal Workload</a>
+
+    </h6>
+    {% set previousMonth = 1 %}
+    {% if semester==1 %}
+        {% set months = [9,10,11,12,1] %}
+    {% else %}
+        {% set months = [2,3,4,5,6] %}
+    {% endif %}
+    {% set classTypes = [1,2,3,4,5,6,7] %}
+    {% set classTypeNames = ['','Lecture','Seminar','Practice','Lab','Class Hour','SIWSI','Language'] %}
+    {% set workloadNames = ['1.00','0.75','0.50','0.25','other','Hourly'] %}
+
+    {% for taughtCourse in taughtCourses %}
+        {% set lectureTopics = taughtCourse.taughtCourse.lectureTopics %}
+        {% set practiceTopics = taughtCourse.taughtCourse.practiceTopics %}
+        <table class="table table-bordered table-sm small" style="width:auto;">
+            <thead>
+                <tr>
+                    <th colspan="10">
+                        <span class="coursename">{{ taughtCourse.taughtCourse.nameEnglish }}</span> 
+                        <a href="/faculty/attendancejournal/course/{{ taughtCourse.taughtCourse.id }}">Course Journal</a> | 
+                        {% if is_granted("ROLE_SPECIALIST") %}
+                            <a href="/faculty/taughtcourse/edit/{{ taughtCourse.taughtCourse.id }}">Edit</a> |
+                        {% endif %}
+                        {% if viewingTeacher==teacher or is_granted("ROLE_DEPARTMENTHEAD") or is_granted("ROLE_SPECIALIST") %}
+                            <a href="/faculty/taughtcourse/editbyteacher/{{ taughtCourse.taughtCourse.id }}/{{ viewingTeacher.id }}">Edit topics</a>
+                        {% endif %}
+                    </th>
+                </tr>
+            </thead>
+            <tr>
+                {% set totalLectures = 0 %}
+                {% set totalPractice = 0 %}
+                {% set totalLab = 0 %}
+                {% set totalSIWSI = 0 %}
+                {% set previousMonthName='' %}
+                {% set lectureCovered = 0 %}
+                {% set practiceCovered = 0 %}
+                {% set siwsiCovered = 0 %}
+                {% for grouppack in taughtCourse.groupPacks %}
+                    {% if grouppack.coursedays|length>0 %}
+                        {% for classType in classTypes %}
+                            {% if classType in grouppack.classTypes %}
+                                {% set printable = true %}
+                                {% if classType==1 %}
+                                    {% if lectureCovered==1 %}
+                                        {% set printable = false %}
+                                    {% endif %}
+                                {% endif %}
+                                {% if (classType==2 or classType==3 or classType==4) and taughtCourse.taughtCourse.isseminarcombined==true %}
+                                    {% if practiceCovered==1 %}
+                                        {% set printable = false %}
+                                    {% endif %}
+                                {% endif %}
+                                {% if classType==6 %}
+                                    {% if siwsiCovered==1 %}
+                                        {% set printable = false %}
+                                    {% endif %}
+                                {% endif %}
+                                {% if printable==true %}
+                                    <td>
+                                        <table class="table table-bordered table-sm" style="width:auto;">
+                                            <tr><td colspan="7">
+                                                    <b>{{ classTypeNames[classType]|upper }}</b>
+                                                </td></tr>
+                                                {% if classType==1 or classType==6%}
+                                                    {% set topics = lectureTopics %}
+                                                {% else %}
+                                                    {% set topics = practiceTopics %}
+                                                {% endif %}
+                                            <tr><td colspan="7">{{ grouppack.group.letterCode }} [{{ taughtCourse.taughtCourse.studentGroups }}]</td></tr>
+                                            {% set itemNumber = 1 %}
+                                            {% set totalSum = 0 %}
+                                            {% for month in months %}
+                                                {% set monthSum = 0 %}
+                                                {% set monthName = '' %}
+                                                {% for courseDay in grouppack.coursedays %}
+                                                    {% set today_class='everyday_class' %}
+                                                    {% if courseDay.classTypeId==classType %}
+                                                        {% if courseDay.date|date('m')==month %}
+                                                            {% if courseDay.changed==true %}
+                                                                {% set today_class='changed_class' %}
+                                                            {% endif %}
+                                                            {% if courseDay.holiday is not null %}
+                                                                {% set today_class='freeday_class' %}
+                                                            {% endif %}
+                                                            {% if courseDay.coverday is not null %}
+                                                                {% set today_class='coverday_class' %}
+                                                            {% endif %}
+                                                            <tr>
+                                                                {% if courseDay.changed==false %}
+                                                                    <td>{{ itemNumber }}</td>
+                                                                {% else %}
+                                                                    <td></td>
+                                                                {% endif %}
+                                                                <td class="{{ today_class }}">{{ courseDay.date|date('d.m.Y') }}</td>
+                                                                <td class="{{ today_class }}">{{ courseDay.date|date('D') }}</td>
+                                                                {% if courseDay.changedDay is not null %}
+                                                                    <td class="{{ today_class }}">{{ courseDay.changedDay.newSession }}</td>
+                                                                {% else %}
+                                                                    <td class="{{ today_class }}">{{ courseDay.session }}</td>
+                                                                {% endif %}
+                                                                <td>{{ courseDay.classType }}</td>
+                                                                <td>
+                                                                    {% if classType==6 or classType==7 %}
+                                                                        1
+                                                                    {% else %}
+                                                                        2
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>
+                                                                    {% if courseDay.holiday is null %}
+                                                                        {% if courseDay.coverday is not null %}
+                                                                            Replacing: {{ courseDay.coverdayTitle }}
+                                                                        {% else %}
+                                                                            {% if topics[itemNumber-1] is defined %}
+                                                                                {{ topics[itemNumber-1]|raw }}
+                                                                            {% else %}
+                                                                                Topic of class
+                                                                            {% endif %}
+                                                                        {% endif %}
+                                                                        {% if is_granted("ROLE_SPECIALIST") %}
+                                                                            {% if courseDay.changedDay is not null %}
+                                                                                <a href='/faculty/schedulechange/editinjournal/{{ courseDay.changedDay.id }}/{{ courseDay.scheduleItem.id }}/{{ year }}/{{ semester }}/{{ courseDay.date|date('Y-m-d') }}'>Edit</a>
+                                                                            {% else %}
+                                                                                <a href='/faculty/schedulechange/editinjournal/0/{{ courseDay.scheduleItem.id }}/{{ year }}/{{ semester }}/{{ courseDay.date|date('Y-m-d') }}'>Add</a>
+                                                                            {% endif %}
+                                                                            <a href="/faculty/scheduleitem/edit/{{ courseDay.scheduleItem.id }}">Edit</a>
+                                                                        {% endif %}
+                                                                    {% else %}
+                                                                        {{ courseDay.holiday.title }}
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                            {% if courseDay.changed==false %}
+                                                                {% set itemNumber=itemNumber+1 %}
+                                                                {% if classType==1 %}
+                                                                    {% set totalLectures = totalLectures+2 %}
+                                                                    {% set monthSum=monthSum+2 %}
+                                                                    {% set totalSum=totalSum+2 %}
+                                                                {% elseif classType==2 or classType==3%}
+                                                                    {% set totalPractice = totalPractice+2 %}
+                                                                    {% set monthSum=monthSum+2 %}
+                                                                    {% set totalSum=totalSum+2 %}
+                                                                {% elseif classType==7 %}
+                                                                    {% set totalPractice = totalPractice+1 %}
+                                                                    {% set monthSum=monthSum+1 %}
+                                                                    {% set totalSum=totalSum+1 %}
+                                                                {% elseif classType==4 %}
+                                                                    {% set totalLab = totalLab+2 %}
+                                                                    {% set monthSum=monthSum+2 %}
+                                                                    {% set totalSum=totalSum+2 %}
+                                                                {% elseif classType==6 %}
+                                                                    {% set totalSIWSI = totalSIWSI+1 %}
+                                                                    {% set monthSum=monthSum+1 %}
+                                                                    {% set totalSum=totalSum+1 %}
+                                                                {% endif %}
+                                                            {% endif %}
+                                                            {% set monthName=courseDay.date|date('F') %}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                <tr><td colspan="5" class="monthsum">{{ monthName }} sum: {{ monthSum }} hours</td></tr>
+                                            {% endfor %}
+                                            <tr><td colspan="5" class="monthsum">TOTAL SUM: {{ totalSum }} hours</td></tr>
+                                        </table>
+                                    </td>
+                                {% endif %}
+                                {% if classType==1 %}
+                                    {% set lectureCovered = 1 %}
+                                {% endif %}
+                                {% if (classType==2 or classType==3 or classType==4) and taughtCourse.taughtCourse.isseminarcombined==true %}
+                                    {% set practiceCovered = 1 %}
+                                {% endif %}
+                                {% if (classType==6) %}
+                                    {% set siwsiCovered = 1 %}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            <tr>
+                <td colspan="5"><b>PERSONAL WORKSHEET:</b><br>
+                    {% set workitemSum = 0 %}
+                    <table class='table table-sm table-condensed table-bordered'>
+                        <thead>
+                            <tr class='monthsum'><th>Work item</th><th>Planned hours</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for workitem in taughtCourse.workitems %}
+                                {% if workitem!=null %}
+                                    {% set workitemSum = workitemSum+workitem.data[29] %}
+                                    <tr>
+                                        <td>
+                                            {{ workitem.title }} - {{ workitem.groupLetterCodes }} <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/{{ workitem.workload }}'>({{ workloadNames[workitem.workload] }})</a>
+                                            {% if is_granted("ROLE_TEACHER") %}
+                                                <a href='/faculty/reportedwork/editinjournal/0/{{ workitem.id }}/{{ year }}/{{ semester }}' title='Add reported works for this item'>Add</a>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ workitem.data[29] }}
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                            <tr>
+                                <td>Total:</td>
+                                <td><b>{{ workitemSum }} hours</b></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="5">
+                    <table class='table table-sm table-condensed table-bordered'>
+                        <thead>
+                            <tr class='monthsum'><th>Work type</th><th>Date</th><th>Reported hours</th></tr>
+                        </thead>
+                        <tbody>
+                            {% set totalSum = 0 %}
+                            {% if totalLectures>0 %}
+                                <tr><td>Lectures </td><td></td><td>{{ totalLectures }}</td></tr>
+                                {% set totalSum = totalSum + totalLectures %}
+                            {% endif %}
+                            {% if totalPractice>0 %}
+                                <tr><td>Practice </td><td></td><td>{{ totalPractice }}</td></tr>
+                                {% set totalSum = totalSum + totalPractice %}
+                            {% endif %}
+                            {% if totalLab>0 %}
+                                <tr><td>Lab </td><td></td><td>{{ totalLab }}</td></tr>
+                                {% set totalSum = totalSum + totalLab %}
+                            {% endif %}
+                            {% if totalSIWSI>0 %}
+                                <tr><td>SIWSI </td><td></td><td>{{ totalSIWSI }}</td></tr>
+                                {% set totalSum = totalSum + totalSIWSI %}
+                            {% endif %}
+                            {% for workitem in taughtCourse.workitems %}
+                                {% if workitem!=null %}
+                                    {% for reportedWork in workitem.reportedworks %}
+                                        {% if is_granted("ROLE_TEACHER") %}
+                                            <tr><td>{{ reportedWork.typeName }} <a href='/faculty/reportedwork/editinjournal/{{ reportedWork.id }}/{{workitem.id }}/{{ year }}/{{ semester }}'>Edit</a></td><td>{{ reportedWork.date|date("d.m.Y") }}</td><td>{{ reportedWork.amount }}</td></tr>
+                                        {% endif %}
+                                        {% set totalSum = totalSum + reportedWork.amount %}
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                            <tr><td colspan='2'>Total</td><td>{{ totalSum }} / {{ workitemSum }} planned hours</td></tr>
+                            <tr><td colspan='5'>
+
+                                </td></tr>
+
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+
+        </table>
+    {% endfor %}
+    <table class='table table-sm table-bordered small'>
+        {% for workitem in workitems %}
+            <tr><td colspan="5"><b><a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/{{ workitem.workload }}'>PERSONAL WORKSHEET ({{ workloadNames[workitem.workload] }})</a>:</b> {{ workitem.title }} - {{ workitem.data[29] }} hours</td></tr>
+            <tr>
+                <td colspan="5">
+                    <table class='table table-sm table-condensed table-bordered'>
+                        <thead>
+                            <tr class='monthsum'><th>Work type</th><th>Date</th><th>Amount of hours</th></tr>
+                        </thead>
+                        <tbody>
+                            {% set totalSum = 0 %}
+                            {% for reportedWork in workitem.reportedworks %}
+                                <tr><td>{{ reportedWork.typeName }} 
+                                        {% if is_granted("ROLE_TEACHER") %}
+                                            <a href='/faculty/reportedwork/editinjournal/{{ reportedWork.id }}/{{workitem.id }}/{{ year }}/{{ semester }}'>Edit</a>
+                                        {% endif %}
+                                    </td><td>{{ reportedWork.date|date("d.m.Y") }}</td><td>{{ reportedWork.amount }}</td></tr>
+                                    {% set totalSum = totalSum + reportedWork.amount %}
+                                {% endfor %}
+                            <tr><td colspan='2'>Total</td><td>{{ totalSum }} / {{workitem.data[29] }} planned hours</td></tr>
+                            <tr><td colspan='5'>
+                                    {% if is_granted("ROLE_TEACHER") %}
+                                        <a href='/faculty/reportedwork/editinjournal/0/{{ workitem.id }}/{{ year }}/{{ semester }}'>Add reported work</a>
+                                    {% endif %}
+                                </td></tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+        });
+    </script>
+{% endblock %}

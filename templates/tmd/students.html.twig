@@ -1,0 +1,191 @@
+{% extends 'main.html.twig' %}
+{% block moduletitle %}Enrolled Students{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='firstname_turkmen'>Firstname</option>
+                <option value='lastname_turkmen'>Lastname</option>
+                <option value='patronym_turkmen'>Patronym</option>
+                <option value='system_id'>SIS Id</option>
+                <option value='tags'>Tags</option>
+                <option value='data'>Info</option>
+                <option value='id'>ID</option>
+            </select>&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>&nbsp;&nbsp;&nbsp;&nbsp;
+            <select name='group_field' id='group_field'>
+                {% for group in groups %}
+                    {% if group.graduationYear>2020 %}
+                        <option value='{{ group.systemId }}'>{{ group.letterCode }}</option>
+                    {% endif %}
+                {% endfor %}}
+            </select>&nbsp;&nbsp;
+            <input type='button' id='show_group_button' value='Show group' onclick='show_group();'>
+        </div>
+    </form> <!--<a href="/faculty/enrolledstudent/new">New</a>-->
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            row_count = 0;
+            $('#main').jtable({
+                title: 'TMD Enrolled Students',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: 'http://erdu.uni.tm/xapi/student/read.php?offset=' + jtParams.jtStartIndex + '&pageSize=' + jtParams.jtPageSize +
+                                        '&sorting=' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                                                                                + '&searchField=' + '{{ search_field|raw }}' + '&searchValue=' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        //console.log(jtParams.jtSorting);
+                                        $dfd.resolve(data);
+                                        row_count = 0;
+                                    },
+                                    error: function (request, status, error) {
+                                        console.log(request.responseText);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        updateAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                console.log(postData);
+                                $.ajax({
+                                    url: 'http://erdu.uni.tm/xapi/student/update.php',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(postData);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (request, status, error) {
+                                        console.log(request.responseText);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        id: {
+                            title: 'ID',
+                            width: '3%',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            list: true
+                        },
+                        toparlar: {
+                            title: 'Toparlar',
+                            width: '3%',
+                            key: true,
+                        },
+                        stdid: {
+                            title: 'Talyp No',
+                            width: '3%',
+                            key: true,
+                        },
+                        fam: {
+                            title: 'Familiyasy',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        ady: {
+                            title: 'Ady',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        aady: {
+                            title: 'Atas. ady',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        suraty: {
+                            title: 'Suraty',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        maglumatnama: {
+                            title: 'Maglumatnama',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        deleted: {
+                            title: 'Deleted',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        kurs: {
+                            title: 'Kurs',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        gornusi: {
+                            title: 'Gornusi',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        hunari: {
+                            title: 'Hunari',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        girenyyly: {
+                            title: 'Giren yyly',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        }
+                    }
+                });
+
+                $('#main').jtable('load');
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault()
+                e.stopPropagation()
+            }
+
+            function search()
+            {
+                window.location.href = "/tmd/students/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+            function show_group()
+            {
+                window.location.href = "/tmd/students/search/toparlar/" + $('#group_field').val();
+            }
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+    </script>
+{% endblock %}

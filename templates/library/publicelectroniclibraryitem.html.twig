@@ -1,0 +1,197 @@
+{% extends 'library/anonymousmain.html.twig' %}
+{% block moduletitle %}Electronic Library Item{% endblock %}
+{% block customcss %}
+    <style>
+        .photo {width:70px;}
+        #QuickImageLinks
+        {
+            text-align: center;
+        }
+
+        .jtable-dialog-form input[type="text"]
+        {
+            min-width: 200px;
+        }
+
+        .jtable-dialog-form {
+            display: block;
+            width: 1200px;
+            -moz-column-gap:30px;
+            -webkit-column-gap:30px;
+            column-gap:30px;
+            -moz-column-count:4;
+            -webkit-column-count:4;
+            column-count:4;
+        }
+    </style>
+{% endblock %}
+{% block main %}
+    <h5>{{ libraryUnit.nameEnglish }}</h5>
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='main_title'>Title</option>
+                <option value='secondary_title'>Subtitle</option>
+                <option value='author'>Author</option>
+                <option value='call_number'>Call number</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form>
+    <!--<a href='/library/electroniclibraryitem/new'>New</a>-->
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#main').jtable({
+                title: 'Electronic Library Items',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'd.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/publiclibrary/electroniclibraryitem/list/{{ libraryUnit.systemId }}/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        //console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'T/b',
+                            create: false,
+                            edit: false,
+                            width: '1%'
+                        },
+                        id: {
+                            title: 'ID',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            width: '1%',
+                            list: false
+                        },
+                        call_number: {
+                            title: 'Inwentar belgisi',
+                            type: 'text',
+                            width: '1%',
+                            defaultValue: '',
+                            list: true
+                        },
+                        photo: {
+                            title: 'Surat',
+                            width: '2%',
+                            create: false,
+                            edit: false,
+                            display: function (data) {
+                                return "<img src='/build/library/" + data.record.library_unit_id + "/electronicitems/photos/" + data.record.call_number_original + ".jpg' width='100'> <div id='drop" + data.record.id + "'></div>";
+                            },
+                            list: true
+                        },
+                        main_title: {
+                            title: 'Ady',
+                            type: 'textarea',
+                            width: '4%',
+                            defaultValue: ''
+                        },
+                        secondary_title: {
+                            title: 'Goşmaça ady',
+                            type: 'textarea',
+                            width: '2%',
+                            defaultValue: '',
+                            list: false
+                        },
+                        author: {
+                            title: 'Awtory',
+                            type: 'textarea',
+                            width: '4%'
+                        },
+                        year: {
+                            title: 'Ýyly',
+                            type: 'text',
+                            width: '1%',
+                            list: false
+                        },
+                        edition: {
+                            title: 'Neşir',
+                            type: 'text',
+                            width: '2%',
+                            defaultValue: '',
+                            list: false
+                        },
+                        isbn: {
+                            title: 'ISBN belgisi',
+                            type: 'text',
+                            width: '2%',
+                            defaultValue: '',
+                            list: false
+                        },
+                        library_unit_id: {
+                            title: 'Kitaphana',
+                            width: '1%',
+                            options: {'{{ libraryUnit.id }}': '{{ libraryUnit.nameEnglish }}'},
+                            defaultValue: {{ libraryUnit.id }},
+                            edit: true,
+                            disabled: true
+                        },
+                        publisher: {
+                            title: 'Neşirýat',
+                            type: 'text',
+                            width: '2%',
+                            list: false
+                        },
+                        actions: {
+                            title: 'Amallar',
+                            create: false,
+                            edit: false,
+                            width: '2%',
+                            display: function (data) {
+                                return "<a target=\"_blank\" href=\"/library/electroniclibraryitem/view/{{ libraryUnit.id }}/?file=elibrary|{{ libraryUnit.id }}|" + data.record.call_number + ".pdf\">View</a>";
+                            },
+                            sorting: false,
+                            list: true
+                        }
+                    }
+
+                });
+                $('#main').jtable('load');
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault()
+                e.stopPropagation()
+            }
+
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+
+            function search()
+            {
+                window.location.href = "/publiclibrary/electroniclibraryitem/search/{{ libraryUnit.systemId }}/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+    </script>
+{% endblock %}

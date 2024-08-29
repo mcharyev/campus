@@ -1,0 +1,236 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Group{% endblock %}
+{% block customcss %}
+    <style>
+        .jtable-dialog-form input[type="text"]
+        {
+            min-width: 200px;
+        }
+
+        .jtable-dialog-form {
+            display: block;
+            width: 700px;
+            -moz-column-gap:40px;
+            -webkit-column-gap:40px;
+            column-gap:40px;
+            -moz-column-count:2;
+            -webkit-column-count:2;
+            column-count:2;
+        }
+    </style>
+{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='letter_code'>Letter Code</option>
+                <option value='system_id'>System Id</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form> <a href="/faculty/group/new">New</a>
+    <div id='error'>{{ sample_text }}
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            row_count = 0;
+            $('#main').jtable({
+                title: 'Groups',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'group.system_id DESC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/faculty/group/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                        row_count = 0;
+                                    },
+                                    error: function (data) {
+                                        //console.log(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }, /*,
+                         createAction: function (postData) {
+                         return $.Deferred(function ($dfd) {
+                         $.ajax({
+                         url: '/faculty/group/create',
+                         type: 'POST',
+                         dataType: 'json',
+                         data: postData,
+                         success: function (data) {
+                         console.log(data);
+                         $dfd.resolve(data);
+                         },
+                         error: function (data) {
+                         console.log(data);
+                         $dfd.reject();
+                         }
+                         });
+                         });
+                         }*/
+                        updateAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/faculty/group/update',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        //console.log(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/faculty/group/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'No',
+                            create: false,
+                            edit: false,
+                            width: '3%'
+                        },
+                        id: {
+                            title: 'ID',
+                            width: '3%',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            list: true
+                        },
+                        system_id: {
+                            title: 'System ID',
+                            type: 'text',
+                            width: '3%',
+                            list: true
+                        },
+                        letter_code: {
+                            title: 'Letter Code',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        study_program_id: {
+                            title: 'Study Program',
+                            options: '/valuepairs/study_program/id/name_english,approval_year/name_english ASC',
+                            width: '10%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        department_id: {
+                            title: 'Department',
+                            options: '/valuepairs/department/id/name_english/name_english ASC',
+                            width: '7%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        graduation_year: {
+                            title: 'Graduation Year',
+                            type: 'text',
+                            width: '5%',
+                            defaultValue: '2024',
+                            list: true
+                        },
+                        advisor_id: {
+                            title: 'Advisor',
+                            options: '/valuepairs/teacher/id/lastname,firstname/lastname ASC',
+                            width: '7%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        group_leader_id: {
+                            title: 'Group Leader',
+                            options: '/valuepairs/enrolled_student/id/lastname_turkmen,firstname_turkmen/lastname_turkmen ASC',
+                            width: '7%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        schedule_name: {
+                            title: 'Sch. Name',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        status: {
+                            title: 'Ready',
+                            options: {'0': 'No', '1': 'Yes'},
+                            width: '2%',
+                            defaultValue: '1',
+                            list: true
+                        },
+                        actions: {
+                            title: 'Actions',
+                            sorting: false,
+                            list: true,
+                            edit: false,
+                            create: false,
+                            display: function (data)
+                            {
+                                info = "<a href='/faculty/group/edit/" + data.record.id + "'>Edit</a>";
+                                info += " | <a href='/faculty/scheduledisplay/group/" + data.record.system_id + "'>Schedule</a>";
+                                info += " | <a href='/faculty/attendancejournal/group/" + data.record.system_id + "'>Attendance Journal</a>";
+        {% if is_granted('ROLE_ADMIN') %}
+                                                        info += " | <a href='/siscustom/listgradesbygroup/" + data.record.letter_code + "'>Grades</a>";
+        {% endif %}
+                                                            return info;
+                                                        }
+
+                                                    }
+        {% if is_granted('ROLE_ADMIN') %}
+        {% endif %}
+                    }
+                });
+                $('#main').jtable('load');
+            });
+            function search()
+            {
+                window.location.href = "/faculty/group/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+    </script>
+{% endblock %}

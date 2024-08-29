@@ -1,0 +1,93 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .small {font-size:12px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+        .bold {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Attendance{% endblock %}
+{% block main %}
+    <h4>{{ report_title }}</h4>
+    <table id="mainTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Ady</th>
+                <th>Fam</th>
+                <th>Aady</th>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <th>ID</th>
+                <th>Ady</th>
+                <th>Fam</th>
+                <th>Aady</th>
+            </tr>
+        </tfoot>
+    </table>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript" charset="utf8" src="/build/dataTable/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="/build/dataTable/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="/build/dataTable/dataTables.editor.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="/build/dataTable/dataTables.select.min.js"></script>
+    <script type="text/javascript">
+var editor; // use a global for the submit and return data rendering in the examples
+var mainUrl = 'http://erdu.uni.tm/xapi/';
+$(document).ready(function() {
+    editor = new $.fn.dataTable.Editor( {
+        ajax: {
+            create: {
+                type: 'POST',
+                url:  mainUrl + 'create.php'
+            },
+            edit: {
+                type: 'PUT',
+                url:  mainUrl + 'update.php'
+            },
+            remove: {
+                type: 'DELETE',
+                url:  mainUrl + 'create.php'
+            }
+        },
+        table: "#mainTable",
+        fields: [ {
+                label: "ID:",
+                name: "id"
+            }, 
+            {
+                label: "Ady:",
+                name: "ady"
+            }, {
+                label: "Familiya:",
+                name: "fam"
+            }, {
+                label: "Atasynyn ady:",
+                name: "aady"
+            }
+        ]
+    } );
+ 
+    $('#mainTable').DataTable( {
+        dom: "Bfrtip",
+        ajax: mainUrl + "read.php",
+        columns: [
+            { data: "id" },
+            { data: "ady" },
+            { data: "fam" },
+            { data: "aady" },
+        ],
+        select: true,
+        buttons: [
+            { extend: "create", editor: editor },
+            { extend: "edit",   editor: editor },
+            { extend: "remove", editor: editor }
+        ]
+    } );
+} );
+    </script>
+{% endblock %}

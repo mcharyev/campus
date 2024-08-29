@@ -1,0 +1,119 @@
+{% extends 'base.html.twig' %}
+{% block moduletitle %}{{ page_title }}{% endblock %}
+{% block customcss %}
+    <style>
+        body {
+            overflow-x: hidden;
+        }
+
+        #sidebar-wrapper {
+            min-height: 100vh;
+            margin-left: -15rem;
+            -webkit-transition: margin .25s ease-out;
+            -moz-transition: margin .25s ease-out;
+            -o-transition: margin .25s ease-out;
+            transition: margin .25s ease-out;
+        }
+
+        #sidebar-wrapper .sidebar-heading {
+            padding: 0.875rem 1.25rem;
+            font-size: 1.2rem;
+        }
+
+        #sidebar-wrapper .list-group {
+            width: 15rem;
+        }
+
+        #page-content-wrapper {
+            min-width: 100vw;
+        }
+
+        #wrapper.toggled #sidebar-wrapper {
+            margin-left: 0;
+        }
+
+        @media (min-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: 0;
+            }
+
+            #page-content-wrapper {
+                min-width: 0;
+                width: 100%;
+            }
+
+            #wrapper.toggled #sidebar-wrapper {
+                margin-left: -15rem;
+            }
+        }
+
+        .logo { border:1px solid gray;padding-top:5px; padding-bottom:5px; padding-left:10px; padding-right:10px; border-radius: 20px; background-color: #01af1e; color:#fff;}
+
+        #twrapper {
+            display: flex;
+        }
+
+        #tleft {
+            flex: 0 0 65%;
+        }
+
+        #tright {
+            flex: 1;
+        }
+
+        .svg-icon {
+            width: 1em;
+            height: 1em;
+        }
+
+        .svg-icon path,
+        .svg-icon polygon,
+        .svg-icon rect {
+            fill: #4691f6;
+        }
+
+        .svg-icon circle {
+            stroke: #4691f6;
+            stroke-width: 1;
+        }
+        
+        strong {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block body %}
+    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4" style="margin-top:-40px;">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="mt-5 white"><span class='logo'>IUHD+</span> Digital Education Platform</h1>
+                <a href="/iuhdplus">Home</a>
+            </div>
+        </div>
+    </nav>
+    <div class="d-flex" id="wrapper" style="margin-top:-18px;">
+        <!-- Sidebar -->
+        <div class="bg-light border-right" style="width:200px;">
+            <div class="list-group list-group-flush" style="margin-top:60px;">
+                <a href="/iuhdplus/course/{{ course.taughtCourse.id }}/home" class="list-group-item list-group-item-action bg-light">COURSE HOME</a>
+                <a href="/iuhdplus/course/{{ course.taughtCourse.id }}/plan" class="list-group-item list-group-item-action bg-light">COURSE PLAN</a>
+                <a href="/iuhdplus/course/{{ course.taughtCourse.id }}/siwsi" class="list-group-item list-group-item-action bg-light">SIWSI</a>
+                <a href="/iuhdplus/course/{{ course.taughtCourse.id }}/readings" class="list-group-item list-group-item-action bg-light">READINGS</a>
+                <!--<a href="course/<?php echo $course_code;?>/materials" class="list-group-item list-group-item-action bg-light">ADDITIONAL MATERIALS</a>-->
+            </div>
+        </div>
+        <!-- /#sidebar-wrapper -->
+        <!-- Page Content -->    
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <h3 class="mt-1">{{ course.title }} - {{ course.code }}</h3>
+                </div>      </nav>      <div class="container-fluid">
+                <h4 class="mt-1">Student's independent work assignments</h4>
+                {{ page_content|raw }}
+            </div>
+        </div>
+        <!-- Page Content -->
+    </div>
+{% endblock %}
+{% block customjs %}
+{% endblock %}{# empty Twig template #}
+{# empty Twig template #}

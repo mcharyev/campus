@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}Campus {% block moduletitle %}{% endblock %} {% endblock %}</title>
+        {% block stylesheets %}
+            {{ encore_entry_link_tags('app') }}
+        {% endblock %}
+        <link rel="shortcut icon" href="/build/images/favicon.ico" />
+        {% block customcss %}
+        {% endblock %}
+    </head>
+    {% block body %}
+        <body>
+            {% block navbar %}
+            {% endblock %}
+            <div style="margin-top:70px;margin-left:10px;margin-right:10px;">
+                <!--<div class="row" style="">
+                 <div class="col">-->
+                {% for message in app.flashes('success') %}
+                    <div class="alert alert-success">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+                {% if is_granted('ROLE_USER') %}
+                    {% block main %}
+                    {% endblock %}
+                {% else %}
+                    You are not signed in! Please sign in <a href='/login/'>here</a>.
+                {% endif %}
+            </div>
+            <!--</div></div>-->
+        </body>
+    {% endblock %}
+    {% block javascripts %}
+        {{ encore_entry_script_tags('app') }}
+    {% endblock %}
+    {% block customjs %}
+    {% endblock %}
+</html>

@@ -1,0 +1,319 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Teacher Work Load{% endblock %}
+{% block customcss %}
+    <style>
+        .verticaltext {
+            -webkit-transform: rotate(-90deg);
+            text-align: center;
+            vertical-align: middle;
+        }
+        .extrasmall {font-size:11px;}
+        .studyProgramRow {font-size:12px;}
+        .editable {border:0px;width:25px;}
+        .low { color: #d6d6d4;}
+        .normal {color: black;}
+    </style>
+{% endblock %}
+{% block main %}
+    <div style="margin:auto;">
+        <h5>Teacher Work Load</h5>
+        <h6>Name: {{ teacher.fullname }}</h6> 
+        <h6>Department: <a href='/faculty/departmentworkitem/department/{{ teacher.department.systemid }}/{{ year }}'>{{ teacher.department.nameEnglish }}</a></h6>
+        <h6>Workload: {{ workload.name }} <a href='/faculty/teacherworkreport/{{ teacher.id }}/{{ year }}/2/{{ workload.value }}'>Work report</a></h6>
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/0'>1.00</a> | 
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/1'>0.75</a> | 
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/2'>0.50</a> | 
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/3'>0.25</a> | 
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/4'>0.33</a> |
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/5'>Hourly</a> | 
+        <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/6'>Replacement</a> | 
+        <a href='/faculty/teacherjournalnew/{{ teacher.id }}/0/{{ year }}/1'>Department Register</a>
+    </div>
+    <div style="margin:auto;">
+        {% set yearPartname = 'semester' %}
+        {% if yearpartCount==3 %}
+            {% set yearPartname = 'trimester' %}
+        {% endif %}
+        {% for yearpart in yearparts %}
+            <table id='table{{ yearpart.yearpart }}' class="table table-sm table-bordered extrasmall">
+                <thead>
+                    <tr><td colspan="34"><h6>{{ yearPartname|title }} {{ yearpart.yearpart }}</h6></td></tr>
+                    <tr class="studyProgramRow">
+                        {% for i in 1..29 %}
+                            <th>{{ i }}</th>
+                            {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for i in 1..29 %}
+                            <th style='vertical-align:middle;'>
+                                {{ columnNames[i] }}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class='sortable'>
+                    {% set itemNumber = 1 %}
+                    {% for item in yearpart.items %}
+                        <tr data-field='{"table_id":"{{ yearpart.yearpart }}", "workitem_id":"{{ item.workitem.id }}", "view_order":"{{ item.workitem.viewOrder }}"}'>
+                            <td>{{ itemNumber }}</td>
+                            <td><span id="fieldvalue2_{{ item.workitem.id }}">{{ item.workitem.title }}</span> 
+                                {% if is_granted("ROLE_SPECIALIST") %}
+                                    <a href='/faculty/teacherworkitem/editinteacher/{{ item.workitem.id }}/{{ teacher.id }}'>Edit</a> 
+                                    <a href='/faculty/teacherworkitem/delete/{{ item.workitem.id }}'>Delete</a> 
+                                    <a href="javascript:calculate({{ item.workitem.id }},{{ item.workitem.type }});">Calculate</a>
+                                    <a href="javascript:saveRow({{ item.workitem.id }},4);">Save</a></td>
+                                {% endif %}
+                            <td>
+                                <span id="fieldvalue3_{{ item.workitem.id }}">{% for group in item.groups %}{{ group.letterCode }}{% if loop.last==false %}, {% endif %}{% endfor %}</span>
+                            </td>
+                            <td>
+                                <input type="text" class="editable" name="fieldvalue4_{{ item.workitem.id }}" 
+                                       id="fieldvalue4_{{ item.workitem.id }}" 
+                                       data-field='{"workitem_id":"{{ item.workitem.id }}", "field":"4"}' 
+                                       value="{% if item.workitem.data[4]==0 %}{{ item.studyyear }}{% else %}{{ item.workitem.data[4] }}{% endif %}"><br>
+                                <span id="info4_{{ item.workitem.id }}"></span>
+                            </td>
+                            <td><input type="text" class="editable" name="fieldvalue5_{{ item.workitem.id }}" 
+                                       id="fieldvalue5_{{ item.workitem.id }}" 
+                                       data-field='{"workitem_id":"{{ item.workitem.id }}", "field":"5"}' 
+                                       value="{% if item.workitem.data[5]==0 %}{{ item.studentcount }}{% else %}{{ item.workitem.data[5] }}{% endif %}"><br><span id="info5_{{ item.workitem.id }}"></span></td>
+                                    {% for i in 6..29 %}
+                                        {% if item.workitem.data[i] is defined %}
+                                            {% if item.workitem.data[i]==0 %}
+                                                {% set colorclass="low" %}
+                                            {% else %}
+                                                {% set colorclass="normal" %}
+                                            {% endif %}
+                                    <td><input type="text" class="editable {{ colorclass }}" name="fieldvalue{{ i }}_{{ item.workitem.id }}" 
+                                               id="fieldvalue{{ i }}_{{ item.workitem.id }}" 
+                                               data-field='{"workitem_id":"{{ item.workitem.id }}", "field":"{{ i }}"}' 
+                                               value="{{ item.workitem.data[i] }}"><br><span id="info{{ i }}_{{ item.workitem.id }}"></span></td>
+                                        {% endif %}
+                                    {% endfor %}
+                        </tr>
+                        {% set itemNumber = itemNumber + 1 %}
+                    {%  endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td></td>
+                        <td>Jemi</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        {% for z in 9..29 %}
+                            {% if yearpart.sums[z]==0 %}
+                                {% set colorclass="low" %}
+                            {% else %}
+                                {% set colorclass="normal" %}
+                            {% endif %}
+                            <td class="{{ colorclass }}">{{ yearpart.sums[z] }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td colspan="34" class="studyProgramRow">
+                            {% if is_granted("ROLE_SPECIALIST") %}
+                                <a href='/faculty/teacherworkitem/editinteacher/0/{{ teacher.id }}/{{ year }}/{{ yearpart.yearpart }}/{{ workload.value }}'>Add work item</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        {% endfor %}
+        <table class="table table-sm table-bordered extrasmall">
+            {%  for yearpart in yearparts  %}
+                <tr>
+                    <td></td>
+                    <td>{{ yearpart.yearpart }} {{ yearPartname }} jemi</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    {% for z in 9..29 %}
+                        {% if yearpart.sums[z]==0 %}
+                            {% set colorclass="low" %}
+                        {% else %}
+                            {% set colorclass="normal" %}
+                        {% endif %}
+                        <td class="{{ colorclass }}">{{ yearpart.sums[z] }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            <tr>
+                <td></td>
+                <td>Okuw ýyly boýunça umumy jem</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                {% for z in 9..29 %}
+                    {% if totalsums[z]==0 %}
+                        {% set colorclass="low" %}
+                    {% else %}
+                        {% set colorclass="normal" %}
+                    {% endif %}
+                    <td class="{{ colorclass }}">{{ totalsums[z] }}</td>
+                {% endfor %}
+            </tr>
+        </table>
+    </div>
+    {% set fieldtype='hidden' %}
+    <form id='mainform' name='mainform'>
+        <input type="{{ fieldtype }}" size=10 name='action' id='action' placeholder='action' value=''>
+        <input type="{{ fieldtype }}" size=10 name='div_id' id='div_id' placeholder='div_id' value=''>
+        <input type="{{ fieldtype }}" size=10 name='workitem_id' id='workitem_id' placeholder='workitem_id' value=''>
+        <input type="{{ fieldtype }}" size=10 name='field' id='field' placeholder='field' value=''>
+        <input type="{{ fieldtype }}" size=10 name='value' id='value' placeholder='value' value=''>
+        <input type="{{ fieldtype }}" size=10 name='bigdata' id='bigdata' placeholder='value' value=''>
+    </form>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+            $('.editable').on('keypress', function (e) {
+                if (e.which === 13) {
+                    console.log($(this).attr("name"));
+                    var field = $(this).data("field");
+                    saveRow(field.field, field.workitem_id);
+                }
+            });
+
+            $(".sortable").sortable({});
+            $(".sortable").disableSelection();
+        });
+
+        function saveViewOrder(table_id)
+        {
+            var i = 1;
+            arrPairs = Array();
+            $('#vieworderdiv' + table_id).html('Saving ...');
+            $('#table' + table_id + ' tbody tr').each(function () {
+                var field = $(this).data("field");
+                field.view_order = i;
+                //console.log(field.workset_id + ':' + field.view_order);
+                arrPairs.push(field.workset_id + ':' + field.view_order)
+                i++;
+            });
+            strPairs = arrPairs.join("|");
+
+            p = '/faculty/teacherworkitem/savevieworder/' + strPairs;
+            var inputs = null;
+            //console.log(p);
+            //return;
+            $.ajax({
+                type: "GET",
+                url: p,
+                data: inputs,
+                success: function (msg) {
+                    //console.log(msg);
+                    $('#vieworderdiv' + table_id).html(msg);
+                },
+                error: function (request, status, error) {
+                    //console.log(request.responseText);
+                    $('#vieworderdiv' + table_id).html(request.responseText);
+                },
+            });
+        }
+
+        function calculate(id, type)
+        {
+            $("#fieldvalue9_" + id).val(34);
+            $("#fieldvalue10_" + id).val(34 * $("#fieldvalue6_" + id).val());
+            $("#fieldvalue11_" + id).val(34);
+            $("#fieldvalue12_" + id).val(34 * $("#fieldvalue7_" + id).val());
+            $("#fieldvalue17_" + id).val(Math.floor($("#fieldvalue5_" + id).val() * 0.5));
+            $("#fieldvalue18_" + id).val(Math.ceil($("#fieldvalue5_" + id).val() * 0.5));
+            $("#fieldvalue16_" + id).val(0);
+            $("#fieldvalue15_" + id).val(0);
+            $("#fieldvalue21_" + id).val(0);
+            if (type == 0)
+            {
+                $("#fieldvalue15_" + id).val(2);
+                $("#fieldvalue21_" + id).val(Math.floor($("#fieldvalue5_" + id).val() * 0.35));
+            }
+            if (type == 1)
+            {
+                $("#fieldvalue9_" + id).val(0);
+                $("#fieldvalue10_" + id).val(0);
+                $("#fieldvalue16_" + id).val(Math.floor($("#fieldvalue5_" + id).val() * 0.35));
+                $("#fieldvalue17_" + id).val(0);
+                $("#fieldvalue18_" + id).val(0);
+            }
+            if (type > 1)
+            {
+                $("#fieldvalue9_" + id).val(0);
+                $("#fieldvalue10_" + id).val(0);
+                $("#fieldvalue11_" + id).val(0);
+                $("#fieldvalue16_" + id).val(0);
+                $("#fieldvalue17_" + id).val(0);
+                $("#fieldvalue18_" + id).val(0);
+            }
+            $("#fieldvalue29_" + id).val(calculateSum(id, type));
+        }
+
+        function saveRow(row, field)
+        {
+            $("#fieldvalue29_" + row).val(calculateSum(row, 0));
+            $('#div_id').val("#info" + field + "_" + row);
+            $('#workitem_id').val(row);
+            $('#field').val(field);
+            $('#value').val($("#fieldvalue" + field + "_" + row).val());
+            $('#bigdata').val(createrowdata(row));
+
+            console.log(row);
+            //console.log($('#bigdata').val());
+            send_data();
+        }
+
+        function createrowdata(workitem_id)
+        {
+            arrValues = Array();
+            for (i = 2; i < 4; i++)
+            {
+                arrValues.push(i + ":" + $("#fieldvalue" + i + "_" + workitem_id).html());
+            }
+            for (i = 4; i < 30; i++)
+            {
+                arrValues.push(i + ":" + $("#fieldvalue" + i + "_" + workitem_id).val());
+            }
+            return arrValues.join("|");
+        }
+
+        function send_data()
+        {
+            p = "/faculty/teacherworkitem/updatefield/";
+            var inputs = $("#mainform").serialize();
+            //console.log(inputs);
+            //return;
+            $.ajax({
+                type: "POST",
+                url: p,
+                data: inputs,
+                success: function (msg) {
+                    //console.log(msg);
+                    $($('#div_id').val()).html(msg);
+                }});
+        }
+
+        function calculateSum(id, type)
+        {
+            var sum = 0;
+            sum += parseInt($("#fieldvalue10_" + id).val());
+            sum += parseInt($("#fieldvalue12_" + id).val());
+            sum += parseInt($("#fieldvalue14_" + id).val());
+            for (i = 15; i < 29; i++)
+            {
+                sum += parseInt($("#fieldvalue" + i + "_" + id).val());
+            }
+            return sum;
+        }
+    </script>
+{% endblock %}{# empty Twig template #}

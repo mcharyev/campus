@@ -1,0 +1,410 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:11px;}
+        .small {font-size:11px;}
+        .today_class {background-color:green;color:#fff;}
+        .freeday_class {background-color:red;color:#fff;}
+        .changed_class {background-color:darkorange;color:#fff;}
+        .coverday_class {background-color:blue;color:#fff;}
+        .everyday_class {}
+        .monthsum {background-color:#f5f5f5;font-weight:bold;}
+        .scheduleitemheader {background-color:#f5f5f5;}
+        .coursename {font-size:1.5em; background-color:#f5f5f5; font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Teacher Journal:{% endblock %}
+{% block main %}
+    {% set classTypes = [1,2,3,4,5,6,7] %}
+    {% set classTypeNames = ['','Lecture','Seminar','Practice','Lab','Class Hour','SIWSI','Language'] %}
+    {% set workloadNames = ['1.00','0.75','0.50','0.25','other','Hourly', 'Replacement','Vacancy'] %}
+    {% set monthsNames=['September', 'October', 'November', 'December', 'January'] %}
+    {% if teacherWorkSet is not null %}
+        <h4>
+            Department Register for Instructor: {{ teacher.fullname }} 
+            (Workload: {{ teacherWorkSet.shortTitle }})
+        </h4>
+        <h6><span class='bold'>Faculty:</span> {{ teacher.department.faculty.nameEnglish }}, <span class='bold'>Dean:</span> {{ teacher.department.faculty.dean.fullname }}</h6>
+        <h6><span class='bold'>Department: </span>{{ teacher.department.nameEnglish }}, <span class='bold'>Department Head:</span> {{ teacher.department.departmenthead.fullname }}</h6>
+        <div class='no-print'>
+            <h6>
+                <span class='bold'>Link:</span> 
+                <a href="/faculty/scheduledisplay/teacher/{{ teacher.id }}">Instructor's Schedule</a> |
+                <a href='/faculty/departmentworkreport/{{ teacherWorkSet.department.id }}/{{ year }}/{{ semester }}'>Department work report</a>
+            </h6>
+            <h6>
+                <span class='bold'>Workset Plans:</span> 
+                {% for teacherWorkSet in teacher.teacherWorkSets %}
+                    <a href="/faculty/teacherworkset/view/{{ teacher.id }}/{{ teacherWorkSet.id }}/{{ year }}">{{ teacherWorkSet.shortTitle }}</a> |
+                {% endfor %}
+            </h6>
+            <h6>
+                <span class='bold'>Workset Reports:</span> 
+                {% for teacherWorkSet in teacher.teacherWorkSets %}
+                    <a href="/faculty/teacherworkreport/{{ teacher.id }}/{{ teacherWorkSet.id }}/{{ year }}/{{ semester }}">{{ teacherWorkSet.shortTitle }}</a> |
+                {% endfor %}
+            </h6>
+            <h6>
+                <span class='bold'>Workset Journals:</span> 
+                {% for teacherWorkSet in teacher.teacherWorkSets %}
+                    <a href="/faculty/teacherjournalnew/{{ teacher.id }}/{{ teacherWorkSet.id }}/{{ year }}/{{ semester }}">{{ teacherWorkSet.shortTitle }}</a> |
+                {% endfor %}
+            </h6>
+            <h6>
+                <span class='bold'>For months:</span> 
+                {% for month in monthsNames %}
+                    <a href="/faculty/teacherjournalnew/{{ teacher.id }}/{{ teacherWorkSet.id }}/{{ year }}/{{ semester }}/{{ loop.index+8 }}">{{ month }}</a> |
+                {% endfor %}
+            </h6>
+        </div>
+        <div id='wrapper'>
+            {% for teacherWorkSetViewItem in teacherWorkSetViewItems %}
+                {% if teacherWorkSetViewItem.totalSum>0 or reportedMonth==null%}
+                    <div style=''>
+                        <table class="table table-bordered table-compact table-sm small" style="width:auto;">
+                            <tr class="coursename">
+                                <td>
+                                    <span>
+                                        {{ teacherWorkSetViewItem.teacherWorkItem.title }} 
+                                        {#                        {{ teacherWorkSetViewItem.teacherWorkItem.id }}#}
+                                    </span>
+                                    <br>
+                                    ({{ teacherWorkSetViewItem.courseName }})
+                                    <span class="no-print">
+                                        {% if teacherWorkSetViewItem.teacherWorkItem.taughtCourse!=null %}
+                                            <a href="/faculty/attendancejournal/course/{{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }}">Course Journal</a> | 
+                                            {% if is_granted("ROLE_SPECIALIST") %}
+                                                <a href="/faculty/taughtcourse/edit/{{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }}">Edit</a> |
+                                            {% endif %}
+                                            {% if viewingTeacher==teacher or is_granted("ROLE_DEPARTMENTHEAD") or is_granted("ROLE_SPECIALIST") %}
+                                                <a href="/faculty/taughtcourse/editbyteacher/{{ teacherWorkSetViewItem.teacherWorkItem.taughtCourse.id }}/{{ viewingTeacher.id }}">Edit topics</a>
+                                            {% endif %}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <table>
+                                        <tr class='scheduleitemheader'>
+                                            {% for scheduleItemViewColumn in teacherWorkSetViewItem.scheduleItemViewColumns  %}
+                                                <td>
+                                                    <strong>Type:</strong> {{ scheduleItemViewColumn.classType|upper }}<br>
+                                                    <strong>Groups:</strong> {{ scheduleItemViewColumn.groupNames|upper }}<br>
+                                                </td>
+                                            {% endfor %}
+                                        </tr>
+                                        {% for month in months %}
+                                            <tr>
+                                                {% set itemNumber = 1 %}
+                                                {% for scheduleItemViewColumn in teacherWorkSetViewItem.scheduleItemViewColumns  %}
+                                                    <td>
+                                                        {% for monthlyWorkItem in scheduleItemViewColumn.monthlyWorkItems if monthlyWorkItem.monthNumber==month %}
+                                                            <table>
+                                                                {% for courseDay in monthlyWorkItem.courseDays %}
+                                                                    {% set today_class='everyday_class' %}
+                                                                    {% if courseDay.changed==true %}
+                                                                        {% set today_class='changed_class' %}
+                                                                    {% endif %}
+                                                                    {% if courseDay.holiday is not null %}
+                                                                        {% set today_class='freeday_class' %}
+                                                                    {% endif %}
+                                                                    {% if courseDay.coverday is not null %}
+                                                                        {% set today_class='coverday_class' %}
+                                                                    {% endif %}
+                                                                    <tr>
+                                                                        {% if courseDay.changed==false %}
+                                                                            <td>{{ courseDay.itemNumber }}</td>
+                                                                        {% else %}
+                                                                            <td></td>
+                                                                        {% endif %}
+                                                                        <td class="{{ today_class }}">{{ courseDay.date|date('d.m') }}</td>
+                                                                        <td class="{{ today_class }}">{{ courseDay.date|date('D') }}</td>
+                                                                        <td class="{{ today_class }}">{{ courseDay.classNumber }}</td>
+                                                                        {#{% if is_granted("ROLE_ADMIN") %}
+                                                                            <td class="{{ today_class }}">{{ courseDay.scheduleItem.schedule.id }}</td>
+                                                                            <td class="{{ today_class }}">{{ courseDay.scheduleItem.endDate|date('d.m') }}</td>
+                                                                        {% endif %}#}
+                                                                        <td class="{{ today_class }}">{{ courseDay.scheduleItem.classType.hours }}</td>
+                                                                        <td>
+                                                                            {% if courseDay.holiday is null %}
+                                                                                {% if courseDay.coverday is not null %}
+                                                                                    Replacing: {{ courseDay.coverdayTitle }}
+                                                                                {% else %}
+                                                                                    {{ courseDay.title }} 
+                                                                                {% endif %}
+                                                                                {% if is_granted("ROLE_SPECIALIST") %}
+                                                                                    <span class="no-print">
+                                                                                        {% if courseDay.changedDay is not null %}
+                                                                                            <a href='/faculty/schedulechange/editinjournal/{{ courseDay.changedDay.id }}/{{ courseDay.scheduleItem.id }}/{{ year }}/{{ semester }}/{{ courseDay.date|date('Y-m-d') }}'>Edit</a>
+                                                                                        {% else %}
+                                                                                            <a href='/faculty/schedulechange/editinjournal/0/{{ courseDay.scheduleItem.id }}/{{ year }}/{{ semester }}/{{ courseDay.date|date('Y-m-d') }}'>Add</a>
+                                                                                        {% endif %}
+                                                                                        <a href="/faculty/scheduleitem/edit/{{ courseDay.scheduleItem.id }}">Edit</a>
+                                                                                    </span>
+                                                                                {% endif %}
+                                                                            </td>
+                                                                        {% else %}
+                                                                            {{ courseDay.holiday.title }}
+                                                                        {% endif %}
+                                                                        {% if reportedMonth!=null %}
+                                                                            <td class="{{ today_class }}">_____________</td>
+                                                                        {% endif %}
+                                                                    </tr>
+                                                                    {% if courseDay.changed==false %}
+                                                                        {% set itemNumber=itemNumber+1 %}
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                            </table>
+                                                        {% endfor %}
+                                                    </td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class='monthsum'>
+                                                {% for scheduleItemViewColumn in teacherWorkSetViewItem.scheduleItemViewColumns  %}
+                                                    <td>
+                                                        {% for monthlyWorkItem in scheduleItemViewColumn.monthlyWorkItems if monthlyWorkItem.monthNumber==month %}
+                                                            {{ monthlyWorkItem.monthName }} sum: {{ monthlyWorkItem.monthSum }} hours
+                                                        {% endfor %}
+                                                    </td>
+                                                {% endfor %}
+                                            </tr>
+                                        {% endfor %}
+                                    </table>
+                                </td>
+                            </tr>
+                            {% if reportedMonth==null %}
+                                <tr>
+                                    <td colspan="5">
+                                        <strong>PLANNED WORKLOAD:</strong><br>
+                                        {% set workitemSum = 0 %}
+                                        <table class='table table-sm table-condensed table-bordered' style="width:auto;">
+                                            <thead>
+                                                <tr class='monthsum'>
+                                                    <th style='vertical-align:middle;'>
+                                                        Work item
+                                                    </th>
+                                                    {% for i in 9..29 %}
+                                                        <th style='vertical-align:middle;'>
+                                                            {{ columnNames[i] }}
+                                                        </th>
+                                                    {% endfor %}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+
+                                                {% if teacherWorkSetViewItem.teacherWorkItem!=null %}
+                                                    {% set workitemSum = workitemSum+teacherWorkSetViewItem.teacherWorkItem.data[29] %}
+                                                    <tr>
+                                                        <td style='vertical-align:middle;'>
+                                                            {{ teacherWorkSetViewItem.teacherWorkItem.title }} - {{ teacherWorkSetViewItem.teacherWorkItem.groupLetterCodes }} <a href='/faculty/teacherworkitem/teacher/{{ teacher.id }}/{{ year }}/{{ teacherWorkSetViewItem.teacherWorkItem.workload }}'>({{ workloadNames[teacherWorkSetViewItem.teacherWorkItem.workload] }})</a>
+                                                            {% if is_granted("ROLE_TEACHER") %}
+                                                                <a href='/faculty/reportedwork/editinjournal/0/{{ teacherWorkSetViewItem.teacherWorkItem.id }}/{{ year }}/{{ semester }}' title='Add reported works for this item'>Add</a>
+                                                            {% endif %}
+                                                        </td>
+                                                        {% for i in 9..29 %}
+                                                            <td style='vertical-align:middle;'>
+                                                                {% if teacherWorkSetViewItem.teacherWorkItem.data[i]>0 %}
+                                                                    {{  teacherWorkSetViewItem.teacherWorkItem.data[i] }}
+                                                                {% endif %}
+                                                            </td>
+                                                        {% endfor %}
+                                                    </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                            <tr>
+                                <td colspan="5">
+                                    <strong>REPORTED WORKLOAD:</strong><br>
+                                    <table class='table table-sm table-condensed table-bordered'>
+                                        <thead>
+                                            <tr class='monthsum'><th>Work type</th><th>Date</th><th>Reported hours</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            {% set totalSum = 0 %}
+                                            {% if teacherWorkSetViewItem.classTypeSums!=null %}
+                                                {% if teacherWorkSetViewItem.classTypeSums[1]>0 %}
+                                                    <tr>
+                                                        <td>Lectures </td>
+                                                        <td></td>
+                                                        <td>{{ teacherWorkSetViewItem.classTypeSums[1] }}</td>
+                                                    </tr>
+                                                {% endif %}
+                                                {% if teacherWorkSetViewItem.classTypeSums[2]>0 or teacherWorkSetViewItem.classTypeSums[3]>0 %}
+                                                    <tr>
+                                                        <td>Practice/Seminar </td>
+                                                        <td></td>
+                                                        <td>{{ teacherWorkSetViewItem.classTypeSums[2]+teacherWorkSetViewItem.classTypeSums[3] }}</td>
+                                                    </tr>
+                                                {% endif %}
+                                                {% if teacherWorkSetViewItem.classTypeSums[4]>0 %}
+                                                    <tr>
+                                                        <td>Lab</td>
+                                                        <td></td>
+                                                        <td>{{ teacherWorkSetViewItem.classTypeSums[4]>0 }}</td>
+                                                    </tr>
+                                                {% endif %}
+                                                {% if teacherWorkSetViewItem.classTypeSums[6]>0 %}
+                                                    <tr><td>SIWSI</td>
+                                                        <td></td>
+                                                        <td>{{ teacherWorkSetViewItem.classTypeSums[6] }}</td>
+                                                    </tr>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% set workitem = teacherWorkSetViewItem.teacherWorkItem %}
+                                            {% if workitem!=null %}
+                                                {% for reportedWork in workitem.reportedworks %}
+                                                    {% if is_granted("ROLE_TEACHER") %}
+                                                        <tr>
+                                                            <td>
+                                                                {{ reportedWork.typeName }} 
+
+                                                                <span class='no-print'><a href='/faculty/reportedwork/editinjournal/{{ reportedWork.id }}/{{workitem.id }}/{{ year }}/{{ semester }}'>Edit</a></a>
+                                                                    {#                                        {{ reportedWork.typeName }} <a href='/faculty/reportedwork/editinjournal/{{ reportedWork.id }}/{{workitem.id }}/{{ year }}/{{ semester }}'>Delete</a>#}
+                                                            </td>
+                                                            <td>{{ reportedWork.date|date("d.m.Y") }}</td>
+                                                            <td>{{ reportedWork.amount }}</td>
+                                                            {% if reportedMonth!=null %}
+                                                                <td>_____________</td>
+                                                            {% endif %}
+                                                        </tr>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                            {% if reportedMonth==null %}
+                                                <tr><td colspan='2'>Total</td><td>{{ teacherWorkSetViewItem.totalSum }} / {{ workitemSum }} planned hours</td></tr>
+                                            {% endif %}
+                                            <tr><td colspan='5'>
+                                                </td></tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% if reportedMonth==null %}
+            <h5>SUMMARY TABLE:</h5>
+            {% set workitemSum = 0 %}
+            <table class="table table-bordered table-compact table-sm extrasmall" style="width:auto;">
+                <thead>
+                    <tr class='monthsum'>
+                        <th style='vertical-align:middle;'>
+                            No.
+                        </th>
+                        <th style='vertical-align:middle;'>Work item</th>
+                            {% for i in 9..29 %}
+                            <th style='vertical-align:middle;'>
+                                {{ columnNames[i] }}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for teacherWorkSetViewItem in teacherWorkSetViewItems %}
+                        {% if teacherWorkSetViewItem.teacherWorkItem!=null %}
+                            {#                        {% set workitemSum = workitemSum+teacherWorkSetViewItem.teacherWorkItem.data[29] %}#}
+                            <tr>
+                                <td style='vertical-align:middle;'>
+                                    {{ loop.index }}
+                                </td>
+                                <td style='vertical-align:middle;'>
+                                    {{ teacherWorkSetViewItem.teacherWorkItem.title }} - {{ teacherWorkSetViewItem.teacherWorkItem.groupLetterCodes }} 
+                                </td>
+                                {% for i in 9..29 %}
+                                    <td style='vertical-align:middle;'>
+                                        {% if teacherWorkSetViewItem.reportedSums[i]>0 %}
+                                            {{  teacherWorkSetViewItem.reportedSums[i] }}
+                                        {% endif %}
+                                        {% if teacherWorkSetViewItem.teacherWorkItem.data[i]>0 %}
+                                            /
+                                            {{  teacherWorkSetViewItem.teacherWorkItem.data[i] }}
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endif %}
+                        {% if teacherWorkSetViewItem.replacedSessionsSums[29]>0 %}
+                            <tr>
+                                <td></td>
+                                <td>Substitutions<td>
+                                    {% for i in 10..29 %}
+                                    <td style='vertical-align:middle;'>
+                                        {% if teacherWorkSetViewItem.replacedSessionsSums[i]>0 %}
+                                            {{  teacherWorkSetViewItem.replacedSessionsSums[i] }}
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    <tr>
+                        <td></td>
+                        <td style='vertical-align:middle;'>
+                            TOTAL
+                        </td>
+                        {% for i in 9..29 %}
+                            <td style='vertical-align:middle;'>
+                                {% if totalReportedSums[i]>0 %}
+                                    {{  totalReportedSums[i] }}
+                                {% endif %}
+                                {% if totalPlannedSums[i]>0 %}
+                                    /
+                                    {{  totalPlannedSums[i] }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+            <h5>SUBSTITUTIONS:</h5>
+            <table class="table table-bordered table-compact table-sm extrasmall" style="width:auto;">
+                <thead>
+                <th></th>
+                <th>Item</th>
+                <th>Date</th>
+                <th>Substitute</th>
+                <th>Hours</th>
+            </thead>
+            <tbody>
+                {% for teacherWorkSetViewItem in teacherWorkSetViewItems %}
+                    {% if teacherWorkSetViewItem.teacherWorkItem!=null %}
+                        {% for replacedSession in teacherWorkSetViewItem.replacedSessions %}
+                            <tr>
+                                <td></td>
+                                <td>
+                                    {{ teacherWorkSetViewItem.teacherWorkItem.title  }}
+                                </td>
+                                <td>
+                                    {{ replacedSession.courseDay.date|date('d.m.Y') }}
+                                </td>
+                                <td>
+                                    {{ replacedSession.teacher.fullname }}
+                                </td>
+                                <td>
+                                    {{ replacedSession.hours }}  
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <br><br><br>
+{% else %}
+    No workset found for {{ teacher.fullname }}!
+    <a href="/faculty/teacherworkset/editinteacher/0/{{ teacher.id }}/{{ year }}/0/{{ teacher.department.id }}">Click here</a> to add!
+{% endif %}
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+        });
+    </script>
+{% endblock %}

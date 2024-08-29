@@ -1,0 +1,498 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Department Worksets{% endblock %}
+{% block customcss %}
+    <style>
+        .verticaltext {
+            -webkit-transform: rotate(-90deg);
+            text-align: center;
+            vertical-align: middle;
+        }
+        .extrasmall {font-size:11px;}
+        .studyProgramRow {font-size:12px;}
+        .editable {border:0px;width:25px;}
+        .low { color: #d6d6d4;}
+        .normal {color: black;}
+    </style>
+{% endblock %}
+{% block main %}
+    {% set workloadNames = ['1.00','0.75','0.50','0.25','other','Hourly','replacement','vacancy'] %}
+    <div style="margin:auto;">
+        <h5>Department Work Load</h5>
+        <h6>
+            Department: 
+            {% if is_granted("ROLE_SPECIALIST") %}
+                <a href='/faculty/departmentworkitem/department/{{ department.systemid }}/{{ year }}'>{{ department.nameEnglish }}</a>
+            {% else %}
+                {{ department.nameEnglish }}
+            {% endif %}
+        </h6>
+    </div>
+    <div style="margin:auto;">
+        {% set yearPartname = 'semester' %}
+        {% if yearpartCount==3 %}
+            {% set yearPartname = 'trimester' %}
+        {% endif %}
+        {% for yearpart in yearparts %}
+            <table id='table{{ yearpart.yearpart }}' class="table table-sm table-bordered table-hover extrasmall">
+                <thead>
+                    <tr><td colspan="34"><h6>{{ yearPartname|title }} {{ yearpart.yearpart }}</h6></td></tr>
+                    <tr class="studyProgramRow">
+                        {% for i in 1..29 %}
+                            <th>{{ i }}</th>
+                            {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for i in 1..29 %}
+                            <th style='vertical-align:middle;'>
+                                {{ columnNames[i] }}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class='sortable'>
+                    {% set itemNumber = 1 %}
+                    {% for item in yearpart.worksets %}
+                        <tr data-field='{"table_id":"{{ yearpart.yearpart }}", "workset_id":"{{ item.workset.id }}", "view_order":"{{ item.workset.viewOrder }}"}'>
+                            <td>{{ itemNumber }}</td>
+                            <td><span id="fieldvalue2_{{ item.workset.id }}">{{ item.workset.title }}</span> 
+                                {% if is_granted("ROLE_SPECIALIST") %}
+                                    {#<a href="javascript:changeOrder({{ item.workset.id }});">Reorder</a>#}
+                                    <a href='/faculty/teacherworkset/edit/{{ item.workset.id }}'>Edit</a>
+                                {% endif %}
+                                <a href='/faculty/teacherworkset/view/{{ item.workset.teacher.id }}/{{ item.workset.id }}/{{ year }}'>Plan</a>
+                                <a href='/faculty/teacherjournalnew/{{ item.workset.teacher.id }}/{{ item.workset.id }}/{{ year }}/{{ yearpart.yearpart }}'>Journal</a>
+                                <a href='/faculty/teacherworkreport/{{ item.workset.teacher.id }}/{{ item.workset.id }}/{{ year }}/{{ yearpart.yearpart }}'>Report</a>
+                            <td>
+
+                            </td>
+                            <td>
+                                <br>
+                                <span id="info4_{{ item.workset.id }}"></span>
+                            </td>
+                            <td>
+                                {% for i in 6..29 %}
+                                    {% if item.sums[i] is defined %}
+                                        {% if item.sums[i]==0 %}
+                                            {% set colorclass="low" %}
+                                        {% else %}
+                                            {% set colorclass="normal" %}
+                                        {% endif %}
+                                    <td><span class="{{ colorclass }}">{{ item.sums[i] }}</span></td>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% set itemNumber = itemNumber + 1 %}
+                    {%  endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td></td>
+                        <td>Jemi</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        {% for z in 9..29 %}
+                            {% if yearpart.sums[z]==0 %}
+                                {% set colorclass="low" %}
+                            {% else %}
+                                {% set colorclass="normal" %}
+                            {% endif %}
+                            <td class="{{ colorclass }}">{{ yearpart.sums[z] }}</td>
+                        {% endfor %}
+                    </tr>
+                </tfoot>
+            </table>
+            {% if is_granted("ROLE_SPECIALIST") %}
+                <a href="javascript:saveViewOrder({{ yearpart.yearpart }});">Save order</a>
+                <div id='vieworderdiv{{ yearpart.yearpart }}'></div>
+            {% endif %}
+        {% endfor %}
+
+        <table class="table table-sm table-bordered extrasmall">
+            <thead>
+                <tr><td colspan="34"><h6>Ýyllyk</h6></td></tr>
+                <tr class="studyProgramRow">
+                    {% for i in 1..29 %}
+                        <th>{{ i }}</th>
+                        {% endfor %}
+                </tr>
+                <tr>
+                    {% for i in 1..29 %}
+                        <th style='vertical-align:middle;'>
+                            {{ columnNames[i] }}
+                        </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% set itemNumber = 1 %}
+                {% for item in yearData.worksets %}
+                    <tr>
+                        <td>[{{ item.workset.viewOrder }}] {{ itemNumber }}</td>
+                        <td><span id="fieldvalue2_{{ item.workset.id }}">{{ item.workset.title }}</span> 
+                            {#<!--<a href="javascript:changeOrder({{ item.workset.id }});">Reorder</a>-->#}
+                            <a href='/faculty/teacherworkset/edit/{{ item.workset.id }}'>Edit</a>
+                            <a href='/faculty/teacherworkset/view/{{ item.workset.teacher.id }}/{{ item.workset.id }}/{{ year }}'>View</a>
+                        <td>
+
+                        </td>
+                        <td>
+                            <br>
+                            <span id="info4_{{ item.workset.id }}"></span>
+                        </td>
+                        <td>
+                            {% for i in 6..29 %}
+                                {% if item.sums[i] is defined %}
+                                    {% if item.sums[i]==0 %}
+                                        {% set colorclass="low" %}
+                                    {% else %}
+                                        {% set colorclass="normal" %}
+                                    {% endif %}
+                                <td><span class="{{ colorclass }}">{{ item.sums[i] }}</span></td>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% set itemNumber = itemNumber + 1 %}
+                {%  endfor %}
+                <tr>
+                    <td></td>
+                    <td>Jemi</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    {% for z in 9..29 %}
+                        {% if yearData.sums[z]==0 %}
+                            {% set colorclass="low" %}
+                        {% else %}
+                            {% set colorclass="normal" %}
+                        {% endif %}
+                        <td class="{{ colorclass }}">{{ yearData.sums[z] }}</td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+
+        <table class="table table-sm table-bordered extrasmall">
+            {%  for yearpart in yearparts  %}
+                <tr>
+                    <td></td>
+                    <td>{{ yearpart.yearpart }} {{ yearPartname }} jemi</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    {% for z in 9..29 %}
+                        {% if yearpart.sums[z]==0 %}
+                            {% set colorclass="low" %}
+                        {% else %}
+                            {% set colorclass="normal" %}
+                        {% endif %}
+                        <td class="{{ colorclass }}">{{ yearpart.sums[z] }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            <tr>
+                <td></td>
+                <td>Okuw ýyly boýunça umumy jem</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                {% for z in 9..29 %}
+                    {% if totalsums[z]==0 %}
+                        {% set colorclass="low" %}
+                    {% else %}
+                        {% set colorclass="normal" %}
+                    {% endif %}
+                    <td class="{{ colorclass }}">{{ totalsums[z] }}</td>
+                {% endfor %}
+            </tr>
+        </table>
+    </div>
+    {% set fieldtype='hidden' %}
+    <form id='mainform' name='mainform'>
+        <input type="{{ fieldtype }}" size=10 name='action' id='action' placeholder='action' value=''>
+        <input type="{{ fieldtype }}" size=10 name='div_id' id='div_id' placeholder='div_id' value=''>
+        <input type="{{ fieldtype }}" size=10 name='workitem_id' id='workitem_id' placeholder='workitem_id' value=''>
+        <input type="{{ fieldtype }}" size=10 name='field' id='field' placeholder='field' value=''>
+        <input type="{{ fieldtype }}" size=10 name='value' id='value' placeholder='value' value=''>
+        <input type="{{ fieldtype }}" size=10 name='bigdata' id='bigdata' placeholder='value' value=''>
+    </form>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+            $('.editable').on('keypress', function (e) {
+                if (e.which === 13) {
+                    console.log($(this).attr("name"));
+                    var field = $(this).data("field");
+                    saveRow(field.field, field.workitem_id);
+                }
+            });
+
+            $(".sortable").sortable({
+                //update: function (event, ui) {
+                //    console.log(ui.item.attr("data-field"));
+                //    var field = ui.item.data("field");
+                //    updateTableOrder(field.table_id);
+                //}
+            });
+            $(".sortable").disableSelection();
+        });
+
+        function saveViewOrder(table_id)
+        {
+            var i = 1;
+            arrPairs = Array();
+            $('#vieworderdiv' + table_id).html('Saving ...');
+            $('#table' + table_id + ' tbody tr').each(function () {
+                var field = $(this).data("field");
+                field.view_order = i;
+                //console.log(field.workset_id + ':' + field.view_order);
+                arrPairs.push(field.workset_id + ':' + field.view_order)
+                i++;
+            });
+            strPairs = arrPairs.join("|");
+
+            p = '/faculty/teacherworkset/savevieworder/' + strPairs;
+            var inputs = null;
+            //console.log(p);
+            //return;
+            $.ajax({
+                type: "GET",
+                url: p,
+                data: inputs,
+                success: function (msg) {
+                    //console.log(msg);
+                    $('#vieworderdiv' + table_id).html(msg);
+                },
+                error: function (request, status, error) {
+                    //console.log(request.responseText);
+                    $('#vieworderdiv' + table_id).html(request.responseText);
+                },
+            });
+        }
+
+        function calculate(id, type)
+        {
+            $("#fieldvalue9_" + id).val(34);
+            $("#fieldvalue10_" + id).val(34 * $("#fieldvalue6_" + id).val());
+            $("#fieldvalue11_" + id).val(34);
+            $("#fieldvalue12_" + id).val(34 * $("#fieldvalue7_" + id).val());
+            $("#fieldvalue17_" + id).val(Math.floor($("#fieldvalue5_" + id).val() * 0.5));
+            $("#fieldvalue18_" + id).val(Math.ceil($("#fieldvalue5_" + id).val() * 0.5));
+            $("#fieldvalue16_" + id).val(0);
+            $("#fieldvalue15_" + id).val(0);
+            $("#fieldvalue21_" + id).val(0);
+            if (type == 0)
+            {
+                $("#fieldvalue15_" + id).val(2);
+                $("#fieldvalue21_" + id).val(Math.floor($("#fieldvalue5_" + id).val() * 0.35));
+            }
+            if (type == 1)
+            {
+                $("#fieldvalue9_" + id).val(0);
+                $("#fieldvalue10_" + id).val(0);
+                $("#fieldvalue16_" + id).val(Math.floor($("#fieldvalue5_" + id).val() * 0.35));
+                $("#fieldvalue17_" + id).val(0);
+                $("#fieldvalue18_" + id).val(0);
+            }
+            if (type > 1)
+            {
+                $("#fieldvalue9_" + id).val(0);
+                $("#fieldvalue10_" + id).val(0);
+                $("#fieldvalue11_" + id).val(0);
+                $("#fieldvalue16_" + id).val(0);
+                $("#fieldvalue17_" + id).val(0);
+                $("#fieldvalue18_" + id).val(0);
+            }
+            $("#fieldvalue29_" + id).val(calculateSum(id, type));
+        }
+
+        function saveRow(row, field)
+        {
+            $("#fieldvalue29_" + row).val(calculateSum(row, 0));
+            $('#div_id').val("#info" + field + "_" + row);
+            $('#workitem_id').val(row);
+            $('#field').val(field);
+            $('#value').val($("#fieldvalue" + field + "_" + row).val());
+            $('#bigdata').val(createrowdata(row));
+
+            console.log(row);
+            //console.log($('#bigdata').val());
+            send_data();
+        }
+
+        function addToWorkSet(teacherWorkItemId, teacherWorkSetId)
+        {
+            p = "/faculty/teacherworkitem/addtoworkset/" + teacherWorkItemId + "/" + teacherWorkSetId;
+            var inputs = $("#mainform").serialize();
+            //console.log(inputs);
+            //return;
+            $.ajax({
+                type: "GET",
+                url: p,
+                data: inputs,
+                success: function (msg) {
+                    //console.log(msg);
+                    $('#msg' + teacherWorkItemId).html(msg);
+                }});
+        }
+
+        function changeOrder(workitem_id)
+        {
+            //console.log('working');
+            //return;
+            var newOrder = prompt("Enter new order?)", 0);
+            //var r = confirm("Do you confirm?");
+            if (newOrder)
+            {
+                p = '/faculty/teacherworksetchangeorder/' + workitem_id + '/' + newOrder;
+                var inputs = null;
+                console.log(p);
+                //return;
+                $.ajax({
+                    type: "GET",
+                    url: p,
+                    data: inputs,
+                    success: function (msg) {
+                        console.log(msg);
+                        $('#info4_' + workitem_id).html('updated:' + newOrder);
+                    }});
+            }
+        }
+
+        function changeGroups(workitem_id, groups)
+        {
+            //console.log('working');
+            //return;
+            var newGroups = prompt("Enter new order?)", groups);
+            //var r = confirm("Do you confirm?");
+            if (newGroups)
+            {
+                p = '/faculty/teacherworkitem/changegroups/' + workitem_id + '/' + newGroups;
+                var inputs = null;
+                console.log(p);
+                //return;
+                $.ajax({
+                    type: "GET",
+                    url: p,
+                    data: inputs,
+                    success: function (msg) {
+                        console.log(msg);
+                        $('#info4_' + workitem_id).html('updated:' + newGroups);
+                    },
+                    error: function (request, status, error) {
+//                    console.log(request.responseText);
+                        $('#output' + id).html(request.responseText);
+                    },
+                });
+            }
+        }
+
+        function createrowdata(workitem_id)
+        {
+            arrValues = Array();
+            for (i = 2; i < 4; i++)
+            {
+                arrValues.push(i + ":" + $("#fieldvalue" + i + "_" + workitem_id).html());
+            }
+            for (i = 4; i < 30; i++)
+            {
+                arrValues.push(i + ":" + $("#fieldvalue" + i + "_" + workitem_id).val());
+            }
+            return arrValues.join("|");
+        }
+
+        function addExpress(id)
+        {
+            p = "/faculty/teacherworkitem/addexpress";
+            var fd = new FormData();
+            fd.append('data', $('#data' + id).val());
+            fd.append('teacherWorkSetId', $('#teacherWorkSetId' + id).val());
+            fd.append('yearpart', $('#yearpart' + id).val());
+            fd.append('commit', $('#commit' + id).val());
+            console.log('processing: fastform' + id);
+
+            $.ajax({
+                url: p,
+                type: 'POST',
+                data: fd,
+                success: function (data) {
+                    console.log(data);
+                    $('#output' + id).html(data);
+                },
+                error: function (request, status, error) {
+//                    console.log(request.responseText);
+                    $('#output' + id).html(request.responseText);
+                },
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+        }
+
+        function deleteItem(workitem_id)
+        {
+            //console.log('working');
+            //return;
+            var r = confirm("Delete really?");
+            if (r)
+            {
+                p = '/faculty/teacherworkitem/delete/' + workitem_id;
+                var inputs = null;
+                //console.log(inputs);
+                //return;
+                $.ajax({
+                    type: "GET",
+                    url: p,
+                    data: inputs,
+                    success: function (msg) {
+                        $('#info4_' + workitem_id).html(msg);
+                    }});
+            }
+        }
+
+        function send_data()
+        {
+            p = "/faculty/teacherworkitem/updatefield/";
+            var inputs = $("#mainform").serialize();
+            //console.log(inputs);
+            //return;
+            $.ajax({
+                type: "POST",
+                url: p,
+                data: inputs,
+                success: function (msg) {
+                    //console.log(msg);
+                    $($('#div_id').val()).html(msg);
+                }});
+        }
+
+        function calculateSum(id, type)
+        {
+            var sum = 0;
+            sum += parseInt($("#fieldvalue10_" + id).val());
+            sum += parseInt($("#fieldvalue12_" + id).val());
+            sum += parseInt($("#fieldvalue14_" + id).val());
+            for (i = 15; i < 29; i++)
+            {
+                sum += parseInt($("#fieldvalue" + i + "_" + id).val());
+            }
+            return sum;
+        }
+    </script>
+{% endblock %}{# empty Twig template #}

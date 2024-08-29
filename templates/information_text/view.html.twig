@@ -1,0 +1,35 @@
+{% extends 'main.html.twig' %}
+{% block moduletitle %} {{ informationText.title }}{% endblock %}
+{% block main %}
+    <div style="width:95%;margin:auto;">
+        <h3>
+            {{ informationText.title }}
+        </h3> 
+        {% if is_granted("ROLE_SPECIALIST") %}
+            <a href='/information_text/edit/{{ informationText.id }}'>Edit</a>
+        {% endif %}
+    </div>
+    <div style="width:95%;margin:auto;">
+        {{ informationText.content|raw }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script src="/build/ckeditor/ckeditor.js"></script>
+    <script>
+        jQuery(document).ready(function () {
+
+            ClassicEditor
+                    .create(document.querySelector('#editor'), {
+                        // toolbar: [ 'heading', '|', 'bold', 'italic', 'link' ]
+                    })
+                    .then(editor => {
+                        window.editor = editor;
+                    })
+                    .catch(err => {
+                        console.error(err.stack);
+                    });
+        });
+    </script>
+{% endblock %}{# empty Twig template #}
+{# empty Twig template #}
+{# empty Twig template #}

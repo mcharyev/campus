@@ -1,0 +1,211 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Student Transcript{% endblock %}
+{% block customcss %}
+    <style>
+        .verticaltext {
+            -webkit-transform: rotate(-90deg);
+            text-align: center;
+            vertical-align: middle;
+        }
+        .studyProgramRow {font-size:12px;}
+        .fieldName {
+            font-weight:bold;
+        }
+        .grouptitle {
+            font-weight:bold;
+            text-align:center;
+        }
+        .grade {
+            width:40px;
+        }
+        .redgrade {
+            width:40px;
+            color: red;
+            font-weight:bold;
+        }
+        .readonly {
+            width:40px;
+            background-color:#e1e1e8;
+        }
+        .error {
+            color: red;
+            font-weight:bold;
+        }
+        .sumRow {
+            text-align:center;
+        }
+    </style>
+{% endblock %}
+{% block main %}
+    {% set creditTypes = ["NONE","Credit","Non-credit","Graded non-credit"] %}
+    {% set semestersEnglish = ["NONE","FALL SEMESTER","SPRING SEMESTER","SUMMER SEMESTER"] %}
+    <div style="margin:auto;text-align:center;"><h4>INTERNATIONAL UNIVERSITY FOR THE HUMANITIES AND DEVELOPMENT</h4>
+        ASHGABAT, TURKMENISTAN<br>STUDENT TRANSCRIPT</div>
+    <div style="margin:auto;">
+        <table width="100%">
+            <tr>
+                <td>
+                    <div><span class="fieldName">Student ID:</span> {{ student.systemId }}</div>
+                    <div><span class="fieldName">Student name:</span> {{ student.threenames }}</div>
+                    <div><span class="fieldName">Faculty:</span> {{ student.faculty.nameEnglish }}</div>
+                    <div><span class="fieldName">Department:</span> {{ student.department.nameEnglish }}</div>
+                    <div><span class="fieldName">Study program:</span> {{ student.studentGroup.studyProgram.letterCode }} - {{ student.studentGroup.studyProgram.nameEnglish }}</div>
+                </td>
+                <td>
+                    <div><span class="fieldName">Degree:</span> {{ student.studentGroup.studyProgram.programLevel.nameEnglish }}</div>
+                    <div><span class="fieldName">Matriculation Date:</span> {{ student.matriculationDate|date("d-m-Y") }}</div>
+                    <div><span class="fieldName">Graduation Date:</span> {{ student.expectedGraduationDate|date("d-m-Y") }}</div>
+                    <div><span class="fieldName">Student status:</span> Enrolled</div>
+                    <div><span class="fieldName">Student Type:</span> Normal</div>
+                </td>
+            </tr>
+        </table><br>
+        <div>
+            {% set courseCount = 0 %}
+            {% set creditCount = 0 %}
+            {% set grandTotal = 0 %}
+            {% for transcriptYear in transcriptYears %}
+                {% for transcriptSemester in [1,2] %}
+                    {% set semesterCourseCount = 0 %}
+                    {% set semesterCreditCount = 0 %}
+                    {% set semesterTotal = 0 %}
+                    <div class="grouptitle">{{ semestersEnglish[transcriptSemester] }} {{ transcriptYear }} </div>
+                    <table class="table table-striped table-compact"> 
+                        <thead>
+                            <tr>
+                                <th>Course ID</th>
+                                <th>Course Name</th>
+                                <th>Credits</th>
+                                <th>Grade in %</th>
+                                <th>4-point system</th>
+                                <th>ECTS</th>
+                                <th>5-point system</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set itemNumber = 1 %}
+                            {% for transcriptCourse in transcriptCourses %}
+                                {% if transcriptCourse.year==transcriptYear and transcriptCourse.semester==transcriptSemester %}
+                                    {% set semesterCourseCount = semesterCourseCount+1 %}
+                                    <tr>
+                                        <td>{{ transcriptCourse.letterCode }}</td>
+                                        <td>{{ transcriptCourse.nameEnglish }}</td>
+                                        <td>
+                                            {% if transcriptCourse.credits==0 %}
+                                                --
+                                            {% else %}
+                                                {{ transcriptCourse.credits }}
+                                            {% endif %}
+                                        </td>
+                                        {% set courseGrade = 0 %}
+                                        {% set gradeStyle = 'grade' %}
+                                        {% set midtermCoefficient = 30 %}
+                                        {% set makeupCoefficient = 0 %}
+                                        {% set finalCoefficient = 45 %}
+                                        {% set siwsiCoefficient = 25 %}
+                                        {% if transcriptCourse.creditType==1 %}
+                                            {% set semesterCreditCount = semesterCreditCount+transcriptCourse.credits %}
+                                            {% if transcriptCourse.makeup>0 %}
+                                                {% set finalCoefficient = 0 %}
+                                                {% set makeupCoefficient = 45 %}
+                                            {% else %}
+                                                {% set finalCoefficient = 45 %}
+                                                {% set makeupCoefficient = 0 %}
+                                            {% endif %}
+                                            {% if (transcriptCourse.siwsi<50 or transcriptCourse.final<50) and transcriptCourse.makeup==0 %}
+                                                {% set finalCoefficient = 0 %}
+                                                {% set makeupCoefficient = 0 %}
+                                                {% set siwsiCoefficient = 0 %}
+                                            {% endif %}
+                                            {% set courseGrade = ((transcriptCourse.midterm*midtermCoefficient+transcriptCourse.final*finalCoefficient+transcriptCourse.makeup*makeupCoefficient+transcriptCourse.siwsi*siwsiCoefficient)/100)|round %}
+                                            {% set grandTotal = transcriptCourse.credits*courseGrade %}
+                                        {% endif %}
+                                        {% if courseGrade<50 %}
+                                            {% set gradeStyle = 'redgrade' %}
+                                        {% endif %}
+                                        <td>
+                                            {% if transcriptCourse.credits==0 %}
+                                                --
+                                            {% else %}
+                                                {{ courseGrade }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if transcriptCourse.credits==0 %}
+                                                --
+                                            {% else %}
+                                                {{ transcriptCourse.fourPointGrade }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ transcriptCourse.ECTSGrade }}
+                                        </td>
+                                        <td>
+                                            {% if transcriptCourse.credits==0 %}
+                                                --
+                                            {% else %}
+                                                {{ transcriptCourse.fivePointGrade }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if courseGrade>=50 %}
+                                                PASSED
+                                            {% else %}
+                                                FAILED
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% set itemNumber = itemNumber + 1 %}
+                                {% endif %}
+                            {% endfor %}
+
+                            <tr><td colspan="9" class="sumRow">
+                                    <span class='fieldName'>COURSES:</span> {{ semesterCourseCount }}, 
+                                    <span class='fieldName'>CREDITS:</span> {{ semesterCreditCount }}, 
+                                    {% if semesterCreditCount>0 %}
+                                        <span class='fieldName'>AVERAGE GRADE:</span> {{ (semesterTotal/semesterCreditCount)|round }},
+                                        <span class='fieldName'>GPA:</span> {{ ((semesterTotal/semesterCreditCount)|round)|fourpointgrade }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div><br>
+                {% set courseCount = courseCount + semesterCourseCount %}
+                {% set creditCount = creditCount + semesterCreditCount %}
+                {% set grandTotal = grandTotal + semesterTotal %}
+            {% endfor %}
+        {% endfor %}
+        <div>
+            <span class='fieldName'>CUMULATIVE CREDITS:</span> {{ creditCount }}, 
+            <span class='fieldName'>CUMULATIVE GRADE:</span> 
+            {% if creditCount>0 %}
+                {% set totalGrade = (grandTotal/creditCount)|round %}
+                {{ totalGrade }}, 
+                <span class='fieldName'>CUMULATIVE GPA:</span> {{ totalGrade|fourpointgrade }}, 
+                <span class='fieldName'>STANDING:</span> {{ (totalGrade|fourpointgrade)|academicstanding }}
+            {% endif %}
+        </div>
+        <div style='text-align:center'>
+            ** End of Transcript **<br>
+        </div>
+        <div>
+            <span style='font-weight:bold;'>Transcript Explanation</span><br>
+            The official language of instruction at the university is English. Students are required to have at least a B2 level of English knowledge before proceeding to the undergraduate program. The applicants who lack requisite level of English, must complete a one-year English language preparation program at the university.<br> 
+            Bachelor's degree can normally be obtained on completion of 4 academic years. One Academic year consists of two semesters, each with 17-weeks of taught classes, a one-week Midterm Examination period and a two-week Final examination period.<br>
+            At least 50 (Fifty) points out of 100 (One Hundred) points must be earned to pass a course.<br>
+            The symbol "*" in grades column indicates that the student fails the particular subject he/she must retake it.<br>
+            GPA means Grade Point Average of the respective semester.<br>
+            Cumulative Credits is the sum of the course credits that the student has taken in his/her study program.<br>
+            Cumulative GPA means Cumulative Grade Average of the student.<br>
+        </div>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+        });
+    </script>
+{% endblock %}{# empty Twig template #}

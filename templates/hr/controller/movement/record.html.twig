@@ -1,0 +1,139 @@
+{% extends 'hr.html.twig' %}
+
+{% block moduletitle %}Employee Form{% endblock %}
+{% block main %}
+    <div id='status'>
+    </div>
+    <div id='mainpanel'>
+        <form name="main" id="main" method="post">
+            <table>
+                <tr><td colspan=2><b></b></td></tr>
+                <tr><td><span class="text-big">Giriş:</big></td><td><input type="text" size=10 name="employee_number0" id="employee_number0" value="" class="employee_number" autocomplete="off"></td></tr>
+                <tr><td>Çykyş:</td><td><input type="text" size=10 name="employee_number1" id="employee_number1" value="" class="employee_number" autocomplete="off"></td></tr>
+                <tr><td></td><td>
+                        <input type="hidden" name="action" id="action" value="entry">
+                        <input type="hidden" name="movement_employeeid" id="movement_employeeid">
+                        <input type="hidden" name="movement_employeenumber" id="movement_employeenumber">
+                        <input type="hidden" name="movement_type" id="movement_type">
+                        <input type="hidden" name="movement_employeename" id="movement_employeename">
+                        <input type="hidden" name="movement_authorid" id="movement_authorid" value="{{ user.id }}"></td></tr>
+                <!--<tr><td colspan=2><input type="reset" value="Täzeden"> <input type="submit" value="Iber"></td></tr>-->
+            </table>
+        </form>
+        <div id='employee'>
+        </div>
+        <br><br>
+        <b>SOŇKY GIRIZILENLER</b>
+        <div id='recentemployees' style='font-size:12px;'>
+            .
+        </div>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        var employees = new Array();
+        var recent_employees = new Array();
+        {{ employees_data|raw }}
+            jQuery(document).ready(function () {
+                $("#add").click(function () {
+                    $('#action').val('add');
+                    send_data();
+                });
+                $("#update").click(function () {
+                    $('#action').val('update');
+                    send_data();
+                });
+                $("#employee_number0").keyup(function (event) {
+                    search_employee(0, event);
+                    $("#employee_number1").val('');
+                });
+                $("#employee_number0").focus(function (event) {
+                    $("#employee_number0").val('');
+                    $("#employee_number1").val('');
+                });
+                $("#employee_number1").focus(function (event) {
+                    $("#employee_number0").val('');
+                    $("#employee_number1").val('');
+                });
+                $("#employee_number1").keyup(function (event) {
+                    search_employee(1, event);
+                    $("#employee_number0").val('');
+                });
+                $('#main').on('keyup keypress', function (e) {
+                    var keyCode = e.keyCode || e.which;
+                    if (keyCode === 13) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            });
+            function search_employee(movement_type, event) {
+                if (event.which == 13)
+                {
+                    if ($("#employee_number0").val() != '')
+                        $("#movement_employeenumber").val($("#employee_number0").val());
+                    else
+                        $("#movement_employeenumber").val($("#employee_number1").val());
+                    send_data();
+                    $("#employee_number0").val('');
+                    $("#employee_number1").val('');
+                    $("#movement_employeeid").val('');
+                    $("#movement_employeename").val('');
+                    $("#movement_type").val();
+                    return;
+                }
+                var number = $("#employee_number" + movement_type).val();
+                $("#employee").html('');
+                var found = -1;
+                for (var i = 0; i < employees.length; i++)
+                {
+                    if (employees[i][1] == number) {
+                        found = i;
+                        break;
+                    }
+                }
+                if (found > -1)
+                {
+                    $("#employee").html("<img src='/build/employee_photos/" + employees[found][1] + ".jpg' height='160' valign='abstop'><br>" + employees[found][1] + '<br> ' + employees[found][2]);
+                    $("#movement_employeeid").val(employees[found][1]);
+                    $("#movement_employeename").val(employees[found][2]);
+                    $("#movement_type").val(movement_type);
+                }
+            }
+
+            function send_data()
+            {
+                var inputs = $("#main").serialize();
+                $('#employee').html("Iberýär. Garaşyň...");
+                $.ajax({
+                    url: '/hr/movement/recordmovement',
+                    type: 'POST',
+                    data: inputs,
+                    success: function (data) {
+                        $('#employee').html(data);
+                        addrecentperson(data);
+                    },
+                    error: function (data) {
+                    }
+                });
+            }
+            function addrecentperson(data)
+            {
+                if (recent_employees.length > 10) {
+                    recent_employees.pop();
+                }
+                recent_employees.unshift(data);
+                var recent = '';
+                for (var i = 0; i < recent_employees.length; i++)
+                {
+                    recent += '<br>' + recent_employees[i];
+                }
+                $('#recentemployees').html(recent);
+            }
+
+            function showerror(str)
+            {
+                $('#status').html(str);
+            }
+    </script>
+{% endblock %}

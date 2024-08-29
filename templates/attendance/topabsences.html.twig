@@ -1,0 +1,162 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+        .bold {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Attendance{% endblock %}
+{% block main %}
+    <h4>{{ unit|title }} {{ report_title }}</h4>
+    {% if faculty is not null %}
+        <h6><span class='bold'>Faculty:</span> {{ faculty.nameEnglish }}</h6>
+        <h6><span class='bold'>Dean:</span> {{ faculty.dean.fullname }}</h6>
+    {% endif %}
+    {% if department is not null %}
+        <h6><span class='bold'>Department: </span>{{ department.nameEnglish }}</h6>
+        <h6><span class='bold'>Department Head:</span> {{ department.departmenthead.fullname }}</h6>
+    {% endif %}
+    {% set studentNumber = 0 %}
+    <a href='/faculty/attendance/totalabsences/{{ unit }}/{{ id }}'>Semester 1</a> |
+    <a href='/faculty/attendance/totalabsences/{{ unit }}/{{ id }}/{{ year }}-09-01/{{ year }}-10-01'>September</a> |
+    <a href='/faculty/attendance/totalabsences/{{ unit }}/{{ id }}/{{ year }}-10-01/{{ year }}-11-01'>October</a> |
+    <a href='/faculty/attendance/totalabsences/{{ unit }}/{{ id }}/{{ year }}-11-01/{{ year }}-12-01'>November</a> |
+    <a href='/faculty/attendance/totalabsences/{{ unit }}/{{ id }}/{{ year }}-12-01/{{ year+1 }}-01-01'>December</a> |
+    <a href='/faculty/attendance/totalabsences/{{ unit }}/{{ id }}/{{ year+1 }}-01-01/{{ year+1 }}-02-01'>January</a> 
+    <a href='/faculty/attendance/totalabsences/{{ unit }}/{{ id }}/{{ year+1 }}-02-01/{{ year+1 }}-03-01'>February</a> |
+    <a href='/faculty/attendance/totalabsences/{{ unit }}/{{ id }}/{{ year+1 }}-03-01/{{ year+1 }}-04-01'>March</a> |
+    <a href='/faculty/attendance/totalabsences/{{ unit }}/{{ id }}/{{ year+1 }}-04-01/{{ year+1 }}-05-01'>April</a> |
+    <a href='/faculty/attendance/totalabsences/{{ unit }}/{{ id }}/{{ year+1 }}-05-01/{{ year+1 }}-06-01'>May</a> |
+    <a href='/faculty/attendance/totalabsences/{{ unit }}/{{ id }}/{{ year+1 }}-06-01/{{ year+1 }}-07-01'>June</a> 
+
+    <table class="table table-bordered table-sm table-compact table-striped" id="mainTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Student</th>
+                <th>Number of absences</th>
+                <th>Excused absences</th>
+                <th>Unexcused absences</th>
+                <th>Recovered absences</th>
+                <th>Unrecovered absences</th>
+                <th>Status</th>
+                <th>Student Group</th>
+                <th>Advisor</th>
+                <th>Student Department</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for absence in absences %}
+                {% set totalAbsences = absence.student.studentAbsencesByDate(beginDate,endDate) %}
+                {% set excusedAbsences = absence.student.ExcusedAbsencesCountByDate(beginDate,endDate) %}
+                {% set unexcusedAbsences = totalAbsences-excusedAbsences %}
+                {% set recoveredAbsences = absence.student.RecoveredAbsencesCountByDate(beginDate,endDate) %}
+                {% set unrecoveredAbsences = totalAbsences-recoveredAbsences %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    {% if absence.student is not null %}
+                        <td><a href='/faculty/attendance/student/{{ absence.student.id }}'>{{ absence.student.lastnameTurkmen }} {{ absence.student.firstnameTurkmen }}</a></td>
+                        <td>{{ totalAbsences }}</td>
+                        <td>{{ excusedAbsences }}</td>
+                        <td>{{ unexcusedAbsences }}</td>
+                        <td>{{ recoveredAbsences }}</td>
+                        <td>{{ unrecoveredAbsences }}</td>
+                        <td>
+                            {% if unexcusedAbsences>=6 and unexcusedAbsences<12 %}
+                                <span style='color:#FFC300;'>Admonition</span>
+                            {% elseif unexcusedAbsences>=12 and unexcusedAbsences<18 %}
+                                <span style='color:#FF6833;'>Reprimand</span>
+                            {% elseif unexcusedAbsences>=18 and unexcusedAbsences<21 %}
+                                <span style='color:#FF3333;'>Severe reprimand</span>
+                            {% elseif unexcusedAbsences>=21 %}
+                                Expulsion
+                            {%  endif %}
+                        </td>
+                        <td><a href='/faculty/attendance/totalabsences/group/{{ absence.student.studentgroup.id }}'>{{ absence.student.studentgroup.letterCode }}</a></td>
+                        <td>{{ absence.student.studentgroup.advisor.fullname }}</td>
+                        <td><a href='/faculty/attendance/totalabsences/department/{{ absence.student.department.id }}'>{{ absence.student.department.nameEnglish }}</a></td>
+                        {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('.dropdown-item.present').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'present');
+            });
+            $('.dropdown-item.absent').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'absent');
+            });
+            $('.dropdown-item.note').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'note');
+            });
+            $('#btnCourse').click(function (e) {
+                send_attendance($(this).attr('data-id'), 'teacher');
+            });
+            $('#mainTable').DataTable({
+                dom: 'Bfrtip',
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    ['10 rows', '25 rows', '50 rows', 'Show all']
+                ],
+                buttons: [
+                    'pageLength', 'copy', 'excel', 'pdf'
+                ]
+            });
+        });
+
+        function send_attendance(id, action)
+        {
+            console.log(id);
+            var absence = $("#data" + id).data("absence");
+            console.log(absence);
+
+            absence_note_new = absence.note;
+            if (action == "note")
+            {
+                $('#action').val('note');
+                var absence_note_input = prompt("Please enter note", absence.note);
+                absence_note_new = absence_note_input;
+            }
+
+            $('#action').val(action);
+            $('#div_id').val(id);
+            $('#absence_id').val(absence.id);
+            $('#student_id').val(absence.student_id);
+            $('#course_id').val(absence.course_id);
+            $('#teacher_id').val(absence.teacher_id);
+            $('#absence_date').val(absence.date);
+            $('#absence_session').val(absence.session);
+            $('#absence_note').val(absence_note_new);
+            $('#absence_status').val(absence.status);
+            $('#absence_type').val(absence.type);
+
+            send_data();
+            if (action == 'present')
+                $("#data" + id).html("<img src='/build/images/attendance_check_icon.png'>");
+            else if (action == 'absent')
+                $("#data" + id).html("<img src='/build/images/attendance_cross_icon.png'>");
+        }
+
+        function send_data()
+        {
+            p = '/faculty/attendance/process';
+            var inputs = $("#mainform").serialize();
+            console.log(inputs);
+            //return;
+            $.ajax({
+                type: "POST",
+                url: p,
+                data: inputs,
+                success: function (msg) {
+                    //$("#status").css("visibility","visible").html(msg);
+                    $("#info" + $('#div_id').val()).html(msg);
+                }});
+        }
+    </script>
+{% endblock %}

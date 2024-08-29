@@ -1,0 +1,137 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %} Rector Orders{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='title'>Name English</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form> <a href="/registrar/rectororder/new">New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            row_count = 0;
+            $('#main').jtable({
+                title: 'Rector Orders',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'rectororder.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/registrar/rectororder/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(jtParams.jtSorting);
+                                        $dfd.resolve(data);
+                                        row_count = 0;
+                                    },
+                                    error: function (data) {
+                                        //console.log(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/registrar/rectororder/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'No',
+                            create: false,
+                            edit: false,
+                            width: '3%'
+                        },
+                        id: {
+                            title: 'ID',
+                            width: '3%',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            list: true
+                        },
+                        title: {
+                            title: 'Title',
+                            type: 'text',
+                            width: '5%',
+                            list: true
+                        },
+                        content: {
+                            title: 'Description',
+                            type: 'textarea',
+                            width: '5%',
+                            list: true
+                        },
+                        type: {
+                            title: 'Type',
+                            options: { '0': '', '1': 'Wezipe', '2': 'Rugsat', '3': 'Temmi bermek', '4':'Okuw sapary', '5':'Talyplaryň hataryndan çykarmak', '6':'Ýyldan ýyla geçirmek', '7':'Familiýasyny üýtgetmek', '8':'UÝJ ýerleşdirmek', '9':'Minnetdarlyk bildirmek', '10':'Nika rugsadyny bermek', '11':'UÝJ çykarmak','12':'Talybyň atasynyň adyny üýtgetmek', '13':'Okuwa kabul etmek hakynda', '14':'Gulluk iş saparynyň töleglerini geçirmek','15':'Sebäpli (akademik) rugsat bermek', '16':'Diplom işleri tassyklamak', '17':'Magistrlik işi tassyklamak', '18':'Tölegsiz okamaga rugsat bermek', '19':'Okuwa dikeltmek', '20':'Halypa mugallym bellemek', '21':'Önümçilik tejribeligine ibermek'},
+                            width: '5%',
+                            list: true
+                        },
+                       user_id: {
+                            title: 'Type',
+                            options: '/valuepairs/user/id/username/id ASC',
+                            width: '5%',
+                            list: true
+                        },
+                        actions: {
+                            title: 'Actions',
+                            sorting:false,
+                            list: true,
+                            edit: false,
+                            create: false,
+                            display: function (data)
+                            {
+                                info = "<a href='/registrar/rectororder/edit/" + data.record.id + "'>Edit</a>";
+                                return info;
+                            }
+
+                        }
+                    }
+                });
+                $('#main').jtable('load');
+            });
+            function search()
+            {
+                window.location.href = "/registrar/rectororder/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+    </script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Student Absence Form{% endblock %}
+{% block main %}
+    <div style="width:90%;margin:auto;"><h3>Student Absence Form</h3></div>
+    <div style="width:90%;margin:auto;">
+    {% form_theme form 'bootstrap_4_horizontal_layout.html.twig' %}
+        {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="submit" class="btn btn-primary">Create</button>
+    {{ form_end(form) }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+    jQuery(document).ready(function () {
+});
+</script>
+{% endblock %}{# empty Twig template #}

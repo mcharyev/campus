@@ -1,0 +1,86 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+    </style>
+{% endblock %}
+{% block moduletitle %}Teacher Journal Usage Report{% endblock %}
+{% block main %}
+    <h4>{{ report_title }}: {{ today|date('d.m.Y') }}</h4>
+    <div>
+        <input type="hidden" name="scheduleId" id="scheduleId" value="{{ schedule.id }}">
+        <input type="date" name="newdate" id="newDate"> <button onclick="viewdate();">View</button>
+    </div>
+    {% set itemNumber = 0 %}
+    <table class="table table-bordered table-sm table-compact table-striped"  id="mainTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Teacher</th>
+                <th>Course</th>
+                <th>Topic</th>
+                <th>Day</th>
+                <th>Session</th>
+                <th>Class Type</th>
+                <th>Groups</th>
+                <th>Rooms</th>
+                <th>Status</th>
+                <th>Last login</th>
+                <th>Teacher Department</th>                
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in journals %}
+                {% set itemNumber = itemNumber + 1 %}
+                <tr>
+                    <td>{{ itemNumber }}</td>
+                    <td>{{ item.scheduleItem.teacher.shortfullname }}</td>
+                    <td><a href='/faculty/attendance/course/{{ item.scheduleItem.taughtcourse.id }}'>{{ item.scheduleItem.taughtcourse.notecoursename }}</a></td>
+                    <td>Topic</td>
+                    <td>{{ item.scheduleItem.day }}</td>
+                    <td>{{ item.scheduleItem.session }}</td>
+                    <td>{{ item.scheduleItem.classType.nameEnglish }}</td>
+                    <td>{{ item.scheduleItem.groupsName }}</td>
+                    <td>{{ item.scheduleItem.roomsName }}</td>
+                    <td>
+                        {% if item.lastLogin is not null %}
+                            {{ item.lastLogin }}
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ item.loginStatus }}
+                    </td>
+                    <td>{{ item.scheduleItem.teacher.department.nameEnglish }}</td>
+
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#mainTable').DataTable({
+                dom: 'Bfrtip',
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    ['10 rows', '25 rows', '50 rows', 'Show all']
+                ],
+                buttons: [
+                    'pageLength', 'copy', 'excel', 'pdf'
+                ]
+            });
+        });
+
+        function viewdate()
+        {
+            var newDate = $('#newDate').val();
+            var id = $('#scheduleId').val();
+            window.location.href = '/faculty/teacherjournalreport/' + id + '/' + newDate;
+        }
+    </script>
+{% endblock %}

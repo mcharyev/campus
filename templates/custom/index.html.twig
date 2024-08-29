@@ -1,0 +1,39 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+    </style>
+{% endblock %}
+{% block moduletitle %}Custom Views{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div style="margin:auto;">
+        <h3>Error Checks</h3>
+        <a class="btn btn-outline-success" href='/custom/checkduplicates/'>Check duplicate schedules</a> 
+        <a class="btn btn-outline-success" href='/custom/checkduplicateabsences/'>Check duplicate absences</a> 
+        <a class="btn btn-outline-success" href='/custom/photocheck'>Check missing photos</a> 
+        <p>
+            {{ content|raw }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            $('#mainTable').DataTable({
+                dom: 'Bfrtip',
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    ['10 rows', '25 rows', '50 rows', 'Show all']
+                ],
+                iDisplayLength: -1,
+                buttons: [
+                    'pageLength', 'copy', 'excel', 'pdf'
+                ]
+            });
+        });
+    </script>
+{% endblock %}

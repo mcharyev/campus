@@ -1,0 +1,41 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .small {font-size:12px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+        .bold {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block moduletitle %}Grades{% endblock %}
+{% block main %}
+    <h4>{{ report_title }}</h4>
+    <p>
+        {{ content|raw }}
+    </p>
+    {% set fieldtype='hidden' %}
+    <form id='mainform' name='mainform'>
+        <input type="{{ fieldtype }}" size=10 name='action' id='action' placeholder='action' value=''>
+        <input type="{{ fieldtype }}" size=10 name='div_id' id='div_id' placeholder='div_id' value=''>
+    </form>
+
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        var selectedItems = Array();
+        $(document).ready(function () {
+            $('#mainTable').DataTable({
+                dom: 'Bfrtip',
+                lengthMenu: [
+                    [25, 50, 100, -1],
+                    ['25 rows', '50 rows', '100 rows', 'Show all']
+                ],
+                buttons: [
+                    'pageLength', 'copy', 'excel', 'pdf'
+                ]
+            });
+        });
+
+    </script>
+{% endblock %}

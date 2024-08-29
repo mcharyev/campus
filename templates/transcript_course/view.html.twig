@@ -1,0 +1,239 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Transcript Course View{% endblock %}
+{% block customcss %}
+    <style>
+        .verticaltext {
+            -webkit-transform: rotate(-90deg);
+            text-align: center;
+            vertical-align: middle;
+        }
+        .studyProgramRow {font-size:12px;}
+        .fieldName {
+            font-weight:bold;
+        }
+        .grouptitle {
+            font-weight:bold;
+            text-align:center;
+        }
+        .grade {
+            width:40px;
+        }
+        .redgrade {
+            width:40px;
+            color: red;
+            font-weight:bold;
+        }
+        .readonly {
+            width:40px;
+            background-color:#e1e1e8;
+        }
+        .error {
+            color: red;
+            font-weight:bold;
+        }
+    </style>
+{% endblock %}
+{% block main %}
+    {% set creditTypes = ["NONE","Credit","Non-credit","Graded non-credit"] %}
+    <div style="margin:auto;"><h3>Transcript Course View</h3></div>
+    <div style="margin:auto;">
+        <div><span class="fieldName">Faculty:</span> {{ taughtCourse.department.faculty.nameEnglish }}</div>
+        <div><span class="fieldName">Department:</span> {{ taughtCourse.department.nameEnglish }}</div>
+        <div><span class="fieldName">Teacher:</span> {{ taughtCourse.teacher.fullname }}</div>
+        {% if programCourse==null %}
+            {% set creditType=1 %}
+            <div class="error"><span>Study program:</span> Error: Program course not found. Check letter codes and make sure they match</div>
+        {% else %}
+            {% set creditType=programCourse.creditType %}
+            <div><span class="fieldName">Study program:</span> {{ programCourse.studyProgram.nameEnglish }} - {{ programCourse.studyProgram.approvalYear }}</div>
+            <div><span class="fieldName">Credit type:</span> {{ creditTypes[programCourse.creditType] }}</div>
+            <div><span class="fieldName">Course name:</span> {{ taughtCourse.nameEnglish }} - {{ programCourse.nameTurkmen }}</div>
+        {% endif %}
+        <div><span class="fieldName">Course code:</span> {{ taughtCourse.courseCode }} </div>
+        <div><span class="fieldName">Student Groups:</span> 
+            {% for groupCourse in groupCourses %}
+                {{ groupCourse.group.systemId }} - {{ groupCourse.group.letterCode }} - {{ groupCourse.group.scheduleName }},
+            {% endfor %}
+        </div>
+        <div>
+            {% if programCourse!=null %}
+                <button onclick='saveGrades();' class='btn btn-primary'>Save grades</button>
+                {% if taughtCourse.nameEnglish=='Physical Education' %}
+                    <button onclick='setGrades(0);' class='btn btn-warning'>Set grades 0</button>
+                    <button onclick='setGrades(50);' class='btn btn-warning'>Set grades 50</button>
+                {% endif %}
+            {% endif %}
+        </div>
+        <div>
+            <form id='mainform' name='mainform'>
+                {% for groupCourse in groupCourses %}
+                    <div class="grouptitle">{{ groupCourse.group.systemId }} - {{ groupCourse.group.letterCode }} - {{ groupCourse.group.scheduleName }} - {{ groupCourse.programCourse.letterCode }}</div>
+                    <table class="table"> 
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Student ID</th>
+                                <th>Student Name</th>
+                                <th>Midterm (30%)</th>
+                                <th>Final (45%)</th>
+                                <th>Make-up (45%)</th>
+                                <th>SIWSI (25%)</th>
+                                <th>Course Grade (100%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set itemNumber = 1 %}
+                            {% for student in groupCourse.group.students %}
+                                <tr>
+                                    <td>{{ itemNumber }}</td>
+                                    <td>{{ student.systemId }}</td>
+                                    <td>{{ student.threenames }}</td>
+                                    {% for studentGrade in studentGrades %}
+                                        {% if studentGrade.studentId==student.systemId %}
+                                            <td>
+                                                {% if groupCourse.programCourse!=null %}
+                                                    <input type='hidden' name='courseCode[]' value='{{ groupCourse.programCourse.letterCode }}' title='courseCode'> 
+                                                    <input type='hidden' name='credit[]' value='{{ groupCourse.programCourse.credits }}' title='credit'> 
+                                                {% else %}
+                                                    <span class="error">Course code not found!</span>
+                                                {% endif %}
+                                                <input type='hidden' name='type[]' value='{{ studentGrade.type }}' title='grade type'> 
+                                                <input type='hidden' name='studentId[]' value='{{ student.systemId }}' title='student id'> 
+                                                <input type='hidden' name='studentName[]' value='{{ student.threenames }}' title='student id'> 
+                                                <input type='hidden' name='groupCode[]' value='{{ groupCourse.group.systemId }}' title='groupCode'> 
+                                                {% if midtermStatus.value==1 %}
+                                                    <input class="grade" maxlength="3" name='midterm[]' type="text" value="{{ studentGrade.grade.midterm }}">
+                                                {% else %}
+                                                    <input class="readonly" maxlength="3" name='midterm[]' type="text" value="{{ studentGrade.grade.midterm }}" readonly>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if finalStatus.value==1 %}
+                                                    <input class="grade" maxlength="3" name='final[]' type="text" value="{{ studentGrade.grade.final }}">
+                                                {% else %}
+                                                    <input class="readonly" maxlength="3" name='final[]' type="text" value="{{ studentGrade.grade.final }}" readonly>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if makeupStatus.value==1 %}
+                                                    <input class="grade" maxlength="3" name='makeup[]' type="text" value="{{ studentGrade.grade.makeup }}">
+                                                {% else %}
+                                                    <input class="readonly" maxlength="3" name='makeup[]' type="text" value="{{ studentGrade.grade.makeup }}" readonly>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if siwsiStatus.value==1 %}
+                                                    <input class="grade" maxlength="3" name='siwsi[]' type="text" value="{{ studentGrade.grade.siwsi }}">
+                                                {% else %}
+                                                    <input class="readonly" maxlength="3" name='siwsi[]' type="text" value="{{ studentGrade.grade.siwsi }}" readonly>
+                                                {% endif %}
+                                            </td>
+                                            {% set courseGrade = 0 %}
+                                            {% set gradeStyle = 'grade' %}
+                                            {% set midtermCoefficient = 30 %}
+                                            {% set makeupCoefficient = 0 %}
+                                            {% set finalCoefficient = 45 %}
+                                            {% set siwsiCoefficient = 25 %}
+                                            {% if creditType==1 %}
+                                                {% if studentGrade.grade.makeup>0 %}
+                                                    {% set finalCoefficient = 0 %}
+                                                    {% set makeupCoefficient = 45 %}
+                                                {% else %}
+                                                    {% set finalCoefficient = 45 %}
+                                                    {% set makeupCoefficient = 0 %}
+                                                {% endif %}
+                                                {% if (studentGrade.grade.siwsi<50 or studentGrade.grade.final<50) and studentGrade.grade.makeup==0 %}
+                                                    {% set finalCoefficient = 0 %}
+                                                    {% set makeupCoefficient = 0 %}
+                                                    {% set siwsiCoefficient = 0 %}
+                                                {% endif %}
+                                                {% set courseGrade = ((studentGrade.grade.midterm*midtermCoefficient+studentGrade.grade.final*finalCoefficient+studentGrade.grade.makeup*makeupCoefficient+studentGrade.grade.siwsi*siwsiCoefficient)/100)|round %}
+                                            {% endif %}
+                                            {% if courseGrade<50 %}
+                                                {% set gradeStyle = 'redgrade' %}
+                                            {% endif %}
+                                            <td><input class="{{ gradeStyle }}" maxlength="3" name='courseGrade[]' type="text" value="{{ courseGrade }}" readonly></td>
+                                            {% endif %}
+                                        {% endfor %}
+                                </tr>
+                                {% set itemNumber = itemNumber + 1 %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endfor %}
+                <div style='display:none;'>
+                    {% set fieldtype='hidden' %}
+                    <input type="{{ fieldtype }}" size=20 name='courseId' id='courseId' placeholder='course_id' value='{{ taughtCourse.id }}'><br>
+                    <input type="{{ fieldtype }}" size=20 name='letterCode' id='letterCode' placeholder='letter Code' value='{{ taughtCourse.courseCode }}'><br>
+                    <input type="{{ fieldtype }}" size=10 name='year' id='year' placeholder='year' value='{{ taughtCourse.year }}'><br>
+                    <input type="{{ fieldtype }}" size=50 name='teacher' id='teacher' placeholder='teacher' value='{{ taughtCourse.teacher.fullname }}'><br>
+                    <input type="{{ fieldtype }}" size=10 name='semester' id='semester' placeholder='semester' value='{{ taughtCourse.semester }}'><br>
+                    <input type="{{ fieldtype }}" size=10 name='groupIds' id='groupids' placeholder='groupIds' value='{{ taughtCourse.studentGroups }}'><br>
+                    {% if programCourse!=null %}
+                        <input type="{{ fieldtype }}" size=100 name='nameEnglish' id='nameEnglish' placeholder='name English' value='{{ programCourse.nameEnglish }}'><br>
+                        <input type="{{ fieldtype }}" size=100 name='nameTurkmen' id='nameTurkmen' placeholder='name Turkmen' value='{{ programCourse.nameTurkmen }}'><br>
+                        <input type="{{ fieldtype }}" size=10 name='creditType' id='creditType' placeholder='credit type' value='{{ programCourse.creditType }}'><br>
+                        <input type="{{ fieldtype }}" size=10 name='courseType' id='courseType' placeholder='course type' value='{{ programCourse.type.systemId }}'><br>
+                    {% endif %}
+                </div>
+            </form>
+            <div>
+                {% if programCourse!=null %}
+                    <button onclick='saveGrades();' class='btn btn-primary'>Save grades</button>
+                {% endif %}
+            </div>
+            <div id='result'></div>
+        </div>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script>
+        jQuery(document).ready(function () {
+        });
+
+        function saveGrades()
+        {
+            //$('#result').html('Saving grades...');
+            $('#mainModalTitle').html('Save grades');
+            $('#mainModalBody').html('Saving grades...');
+            $('#mainModal').modal('show');
+            p = "/grading/transcriptcourse/savegrades";
+            var inputs = $("#mainform").serialize();
+            //console.log(inputs);
+            //return;
+            $.ajax({
+                type: "POST",
+                url: p,
+                data: inputs,
+                success: function (msg) {
+                    //console.log(msg);
+                    //$('#result').html(msg);
+                    $('#mainModalBody').html(msg);
+                    $('#mainModal').delay(2000).fadeOut(1000, function () {
+                        $('#mainModal').modal('hide');
+                    });
+                },
+                error: function (request, status, error) {
+                    //console.log(request.responseText);
+                    //$('#result').html(request.responseText);
+                    $('#mainModalBody').html(request.responseText);
+                },
+            });
+        }
+
+        function setGrades(grade)
+        {
+            r = confirm('Are you sure?');
+            if (r)
+            {
+                $("#mainform input[name='midterm[]']").val(grade);
+                $("#mainform input[name='final[]']").val(grade);
+                $("#mainform input[name='makeup[]']").val(0);
+                $("#mainform input[name='siwsi[]']").val(grade);
+                $("#mainform input[name='courseGrade[]']").val(grade);
+
+            }
+        }
+    </script>
+{% endblock %}{# empty Twig template #}

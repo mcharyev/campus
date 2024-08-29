@@ -1,0 +1,245 @@
+{% extends 'main.html.twig' %}
+
+{% block moduletitle %}Taught Courses{% endblock %}
+{% block main %}
+    <form name='searchform'>
+        <div>
+            <label for="search_value">Search:</label>
+            <input type='text' name='search_value' id='search_value' value='' size='15'>&nbsp;
+            <select name='search_field' id='search_field'>
+                <option value='teacher_id'>Teacher Id</option>
+                <option value='id'>Course Id</option>
+                <option value='student_groups'>Student Groups</option>
+                <option value='data'>Data</option>
+            </select>&nbsp;&nbsp;
+            <input type='button' id='search_button' value='Search' onclick='search();'>
+        </div>
+    </form> <a href="/faculty/taughtcourse/new">New</a>
+    <div id='error'>
+    </div>
+    <div id='main'>
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            row_count = 0;
+            $('#main').jtable({
+                title: 'Taught Courses',
+                paging: true,
+                pageSize: 35,
+                sorting: true,
+                startIndex: 0,
+                defaultSorting: 'taught_course.id ASC',
+                actions: {
+                    listAction: function (postData, jtParams) {
+                        return $.Deferred(function ($dfd) {
+                            $.ajax({
+                                url: '/faculty/taughtcourse/list/' + jtParams.jtStartIndex + '/' + jtParams.jtPageSize + '/' + jtParams.jtSorting
+        {% if (search_field is defined and search_field is not empty) and (search_value is defined and search_value is not empty) %}
+                                            + '/' + '{{ search_field|raw }}' + '/' + '{{ search_value|raw }}'
+        {% endif %},
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(jtParams.jtSorting);
+                                        $dfd.resolve(data);
+                                        row_count = 0;
+                                    },
+                                    error: function (data) {
+                                        //console.log(data);
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        },
+                        deleteAction: function (postData) {
+                            return $.Deferred(function ($dfd) {
+                                $.ajax({
+                                    url: '/faculty/taughtcourse/delete',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: postData,
+                                    success: function (data) {
+                                        console.log(data);
+                                        $dfd.resolve(data);
+                                    },
+                                    error: function (data) {
+                                        $dfd.reject();
+                                    }
+                                });
+                            });
+                        }
+                    },
+                    fields: {
+                        row_number: {
+                            title: 'No',
+                            create: false,
+                            edit: false,
+                            width: '3%'
+                        },
+                        id: {
+                            title: 'ID',
+                            width: '3%',
+                            key: true,
+                            create: false,
+                            edit: false,
+                            list: true
+                        },
+                        teacher_id: {
+                            title: 'Teacher',
+                            options: '/valuepairs/teacher/id/name_english/id ASC',
+                            width: '5%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        department_id: {
+                            title: 'Department',
+                            options: '/valuepairs/department/id/name_english/id ASC',
+                            width: '5%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        /*custom_actions: {
+                         title: 'Actions',
+                         sorting: false,
+                         list: true,
+                         edit: false,
+                         create: false,
+                         display: function (data)
+                         {
+                         info = "<a href=\"javascript:updateCourse(" + data.record.id + ",'department',7);\">PHS</a> ";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',5);\">SSC</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',8);\">JOUR</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',14);\">PE</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',1);\">LAW</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',2);\">LANG</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',4);\">IR</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',9);\">ECON</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',10);\">FIN</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',11);\">MAN</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',12);\">CTS</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',13);\">MCT</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',6);\">ENS</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',15);\">LLD</a>";
+                         info += " | <a href=\"javascript:updateCourse(" + data.record.id + ",'department',16);\">MSC</a>";
+                         info += "<span id='customfield" + data.record.id + "'></span>";
+                         return info;
+                         }
+                         },*/
+                        student_groups: {
+                            title: 'Groups',
+                            type: 'text',
+                            width: '3%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        grading_type: {
+                            title: 'Grad. type',
+                            type: 'text',
+                            width: '3%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        semester: {
+                            title: 'Semester',
+                            type: 'text',
+                            width: '3%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        course_code: {
+                            title: 'Letter Code',
+                            type: 'text',
+                            width: '3%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        name_english: {
+                            title: 'Name',
+                            type: 'text',
+                            width: '3%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        year: {
+                            title: 'Year',
+                            type: 'text',
+                            width: '3%',
+                            defaultValue: '0',
+                            list: true
+                        },
+                        data: {
+                            title: 'Data',
+                            type: 'text',
+                            width: '3%',
+                            defaultValue: '0',
+                            list: false
+                        },
+                        start_date: {
+                            title: 'Start date',
+                            type: 'date',
+                            width: '5%',
+                            list: true
+                        },
+                        end_date: {
+                            title: 'End date',
+                            type: 'date',
+                            width: '5%',
+                            list: true
+                        },
+                        actions: {
+                            title: 'Actions',
+                            sorting: false,
+                            list: true,
+                            edit: false,
+                            create: false,
+                            display: function (data)
+                            {
+                                info = "<a href='/faculty/taughtcourse/edit/" + data.record.id + "'>Edit</a>";
+                                info += " | <a href='/faculty/scheduleitem/search/taught_course_id/" + data.record.id + "'>Schedule Items</a>";
+                                info += " | <a href='/faculty/attendancejournal/course/" + data.record.id + "'>Attendance</a>";
+        {% if is_granted("ROLE_ADMIN") %}
+                                info += " | <a href='/grading/transcriptcourse/course/view/" + data.record.id + "/" + data.record.course_code + "/" + data.record.student_groups + "/" + data.record.year + "'>Grades</a>";
+        {% endif %}
+                                return info;
+                            }
+                        }
+                    }
+                });
+                $('#main').jtable('load');
+            });
+            function search()
+            {
+                window.location.href = "/faculty/taughtcourse/search/" + $('#search_field').val() + "/" + $('#search_value').val();
+            }
+            function showerror(str)
+            {
+                $('#error').html(str);
+            }
+
+            function updateCourse(courseId, field, id)
+            {
+                //console.log('working');
+                //return;
+                p = '/faculty/taughtcourse/updatecourse/' + courseId + '/' + field + '/' + id;
+                var inputs = null;
+                console.log(p);
+                //return;
+                $.ajax({
+                    type: "GET",
+                    url: p,
+                    data: inputs,
+                    success: function (msg) {
+                        console.log(msg);
+                        $('#customfield' + courseId).html('<br>' + msg);
+                    },
+                    error: function (request, status, error) {
+//                    console.log(request.responseText);
+                        $('#customfield' + courseId).html(request.responseText);
+                    },
+                });
+            }
+    </script>
+{% endblock %}

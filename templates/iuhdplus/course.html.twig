@@ -1,0 +1,326 @@
+{% extends 'base.html.twig' %}
+{% block moduletitle %}{{ page_title }}{% endblock %}
+{% block customcss %}
+    <style>
+        body {
+            overflow-x: hidden;
+        }
+
+        #sidebar-wrapper {
+            min-height: 100vh;
+            margin-left: -15rem;
+            -webkit-transition: margin .25s ease-out;
+            -moz-transition: margin .25s ease-out;
+            -o-transition: margin .25s ease-out;
+            transition: margin .25s ease-out;
+        }
+
+        #sidebar-wrapper .sidebar-heading {
+            padding: 0.875rem 1.25rem;
+            font-size: 1.2rem;
+        }
+
+        #sidebar-wrapper .list-group {
+            width: 15rem;
+        }
+
+        #page-content-wrapper {
+            min-width: 100vw;
+        }
+
+        #wrapper.toggled #sidebar-wrapper {
+            margin-left: 0;
+        }
+
+        @media (min-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: 0;
+            }
+
+            #page-content-wrapper {
+                min-width: 0;
+                width: 100%;
+            }
+
+            #wrapper.toggled #sidebar-wrapper {
+                margin-left: -15rem;
+            }
+        }
+
+        .logo { border:1px solid gray;padding-top:5px; padding-bottom:5px; padding-left:10px; padding-right:10px; border-radius: 20px; background-color: #01af1e; color:#fff;}
+
+        #twrapper {
+            display: flex;
+        }
+
+        #tleft {
+            flex: 0 0 65%;
+        }
+
+        #tright {
+            flex: 1;
+        }
+
+        .svg-icon {
+            width: 1em;
+            height: 1em;
+        }
+
+        .svg-icon path,
+        .svg-icon polygon,
+        .svg-icon rect {
+            fill: #4691f6;
+        }
+
+        .svg-icon circle {
+            stroke: #4691f6;
+            stroke-width: 1;
+        }
+
+        strong {font-weight:bold;}
+    </style>
+{% endblock %}
+{% block body %}
+    <!--<nav class="navbar navbar-expand-md navbar-light bg-light mb-4" style="margin-top:-40px;">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="mt-5 white"><span class='logo'>IUHD+</span> Digital Education Platform</h1>
+                <a href="/iuhdplus">Home</a>
+            </div>
+        </div>
+    </nav>-->
+    <div class="d-flex" id="wrapper" style="margin-top:0px;">
+        <!-- Sidebar -->
+        <div class="bg-light border-right" style="width:200px;">
+            <div class="list-group list-group-flush" style='margin-top:-42px;'>
+                <h1 class="mt-5 white" style='margin-left:10px;'><span class='logo'>IUHD+</span></h1>
+                <a href="/iuhdplus/" class="list-group-item list-group-item-action bg-light">IUHD+</a>
+                <a href="/iuhdplus/department/{{ course.taughtCourse.department.systemid }}" class="list-group-item list-group-item-action bg-light">Department</a>
+                <a href="/iuhdplus/course/{{ course.taughtCourse.id }}/home" class="list-group-item list-group-item-action bg-light">COURSE HOME</a>
+                <a href="/iuhdplus/course/{{ course.taughtCourse.id }}/plan" class="list-group-item list-group-item-action bg-light">COURSE PLAN</a>
+                <a href="/iuhdplus/course/{{ course.taughtCourse.id }}/siwsi" class="list-group-item list-group-item-action bg-light">SIWSI</a>
+                <a href="/iuhdplus/course/{{ course.taughtCourse.id }}/readings" class="list-group-item list-group-item-action bg-light">READINGS</a>
+                <!--<a href="course/<?php echo $course_code;?>/materials" class="list-group-item list-group-item-action bg-light">ADDITIONAL MATERIALS</a>-->
+            </div>
+        </div>
+        <!-- /#sidebar-wrapper -->
+        <!-- Page Content -->    
+        <div id = 'page-content-wrapper'>
+            <nav class = "navbar navbar-expand-lg navbar-light bg-light border-bottom">
+                <div class = "collapse navbar-collapse" id = "navbarSupportedContent">
+                    <h3 class = "mt-1">{{ course.title }} - {{ course.code }}</h3>
+                </div>
+                <a href='/iuhdplus/course/{{ course.taughtCourse.id }}/syllabus'>Syllabus</a> | 
+                <a href='courses/{{ course.programCourse.department.systemId }}/{{ course.code }}/{{ course.code }}.xlsx'>xlsx</a>
+            </nav>
+            {% if action=="home" %}
+                <div class="container-fluid">
+                    <p>
+                        <strong>Faculty:</strong> {{ course.faculty }} 
+                        {% if editable==true %}
+                            <a class='updatelink' href="javascript:update('{{ course.code }}','Course','B1',1,'{{ course.faculty }}');">{{ button|raw }}</a>
+                        {% endif %}
+                        <br><strong>Department:</strong> {{ course.department }}
+                        {% if editable==true %}
+                            <a class='updatelink' href="javascript:update('{{ course.code }}','Course','B3',3,'{{ course.department }}');">{{ button|raw }}</a>
+                        {% endif %}
+                        <br>
+                        <strong>Curriculum year:</strong> {{ course.year }}
+                        {% if editable==true %}
+                            <a class='updatelink' href="javascript:update('{{ course.code }}','Course','B17',17,'{{ course.year }}');">{{ button|raw }}</a>
+                        {% endif %}
+                        <br>
+                        <strong>Curriculum semester:</strong> {{ course.semester }}
+                        {% if editable==true %}
+                            <a class='updatelink' href="javascript:update('{{ course.code }}','Course','B28',28,'{{ course.semester }}');">{{ button|raw }}</a>
+                        {% endif %}
+                        <br>
+                        <strong>Instructor:</strong> {{ course.instructor }}
+                        {% if editable==true %}
+                            <a class='updatelink' href="javascript:update('{{ course.code }}','Course','B13',13,'{{ course.instructor }}');">{{ button|raw }}</a>
+                        {% endif %}
+                        <br>
+                        <strong>Office hours:</strong> {{ course.officehours }}
+                        {% if editable==true %}
+                            <a class='updatelink' href="javascript:update('{{ course.code }}','Course','B33',33,'{{ course.officehours }}');">{{ button|raw }}</a>
+                        {% endif %}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <strong>Room:</strong> {{ course.room }}
+                        {% if editable==true %}
+                            <a class='updatelink' href="javascript:update('{{ course.code }}','Course','B34',34,'{{ course.room }}');">{{ button|raw }}</a>
+                        {% endif %}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <strong>Email:</strong> {{ course.email }}
+                        {% if editable==true %}
+                            <a class='updatelink' href="javascript:update('{{ course.code }}','Course','B35',35,'{{ course.email }}');">{{ button|raw }}</a>
+                        {% endif %}
+
+                        <br>
+                        {{ course.image|raw }}
+                    <p style="clear:left;">
+                        {{ course.description|raw }}
+                    </p> 
+                    {% if editable==true %}
+                        <a class='updatelink' href="javascript:update('{{ course.code }}','Course','B27',27,'{{ course.description|raw }}');">{{ button|raw }}</a>
+                    {% endif %}
+
+                    <p style="clear:left;">
+                    <h3 class="mt-1">Learning objectives</h3>
+                    <p>By the end of the course the students will acquire the following competencies: </p>
+                    <p>
+                        {{ course.objectives|raw }}
+                    </p> 
+                    {#                <?php if(MANAGER) echo "<a class='updatelink' href=\"javascript:update('".$course_code."','Course','B28',28,'".$course_objectives."');\">".getbutton('edit')."</a>"; ?> #}
+                    <h3 class="mt-1">Teaching methods</h3>
+                    <p>{{ course.methods|raw }}
+                        {#                    <?php if(MANAGER) echo "<a class='updatelink' href=\"javascript:update('".$course_code."','Course','B29',29,'".$course_methods."');\">".getbutton('edit')."</a>"; ?> #}
+                    <p><h3 class="mt-1">Course assessment</h3>
+                    {{ course.assessment|raw }}
+                    {#                <?php if(MANAGER) echo "<a class='updatelink' href=\"javascript:update('".$course_code."','Course','B30',30,'".str_replace("'", "\'", $course_assesment)."');\">".getbutton('edit')."</a>"; ?> #}
+                </div><br><br>&nbsp;
+            {% elseif action=='plan' %}
+                <div class="container-fluid">
+                    <h4 class="mt-1">Course plan</h4>
+                    <table class="table">
+                        <thead>
+                            <tr><td colspan=2><h4>LECTURES</h4></td></tr>
+                            <tr><th scope="col-lg-2">SESSION</th><th scope="col">TOPIC</th></tr>
+                        </thead>
+                        <tbody>
+                            {{ page_content|raw }}
+                        </tbody>
+                    </table>
+                </div>
+            {% elseif action=='siwsi' %}
+                <div class="container-fluid">
+                    <h4 class="mt-1">Student's independent work assignments</h4>
+                    {{ page_content|raw }}
+                </div>
+            {% elseif action=='readings' %}
+                <div class="container-fluid">
+                    <h4 class="mt-1">Readings</h4>
+                    {{ page_content|raw }}
+                </div>
+            {% endif %}
+        </div>
+        <!-- Page Content -->
+    </div>
+    <form name="main" id="main" enctype="multipart/form-data"><div id="form" name="form" style="margin:10px; padding:10px; border:1px solid gray; background-color:white; z-index:5;position:absolute;visibility:hidden;"><span id='output' style='color: green; font-weight:bold;'></span>
+            <div><input type='hidden' name='action' id='action'></div>
+            <div id='title_form' style='font-weight:bold;'>ITEM</div>
+            <div style='display:none; visibility:hidden;'><input type='text' name='course_code' id='course_code'></div>
+            <div style='display:none; visibility:hidden;'><input type='text' name='course_id' id='course_id'></div>
+            <div style='display:none; visibility:hidden;'><input type='text' name='course_sheet' id='course_sheet'></div>
+            <div style='display:none; visibility:hidden;'>Cell: <input type='text' name='course_cell' id='course_cell'></div>
+            <div style='display:none;'><input type='text' name='course_row' id='course_row'></div>
+            <div id='itemtype'>Type: 
+                <select name='course_itemtype' id='course_itemtype'>
+                    <option value="TOPIC">TOPIC</option>
+                    <option value="SUBTOPIC">SUBTOPIC</option>
+                    <option value="SOURCE">SOURCE</option>
+                    <option value="MEDIA">MEDIA</option>
+                    <option value="P-TOPIC">PRACTICE TOPIC</option>
+                    <option value="P-SUBTOPIC">PRACTICE SUBTOPIC</option>
+                    <option value="P-SOURCE">PRACTICE SOURCE</option>
+                    <option value="EXAM">EXAM</option>
+                </select></div>
+            <div id='itemcontent'>Content:<br><textarea name='course_value' id='course_value' style='width:600px; height:150px;'></textarea></div>
+            <div  id='itemvalue' style='display:block;'>Value: <input type='text' name='course_value2' id='course_value2'></div>
+            <input id="filefield" style="display:none;" name='file<?php echo $course_code; ?>' type='file' multiple />
+            <div style='margin-top:5px;'><input type='button' onclick='closeform();' value='Close'> <input type='button' onclick='send_data();' value='Submit'></div>
+        </div>
+    </form>
+{% endblock %}
+{% block customjs %}
+    <script type='text/javascript'>
+        $(document).ready(function () {
+            $('.updatelink').click(function (e) {
+                //console.log(e);
+                $('#form').css({'top': e.pageY - 50, 'left': e.pageX});
+                $("#form").draggable();
+            });
+        });
+
+        function perform(action, code, sheet, cell, row, type, value, value2)
+        {
+            //console.log(code);
+            if (action == "deleterow")
+            {
+                var r = confirm("Are you sure you want to delete the row " + row + "?");
+                if (!r) {
+                    return 0;
+                }
+            }
+            $("#itemtype").css("display", "block");
+            $("#itemcontent").css("display", "block");
+            $("#itemvalue").css("display", "block");
+            $("#filefield").css("display", "none");
+            switch (action)
+            {
+                case "updateitemcellvalue":
+                    $("#title_form").html('EDIT ITEM');
+                    break;
+                case "insertitemcellvalue":
+                    $("#title_form").html('ADD ITEM');
+                    break;
+                case "deleterow":
+                    $("#title_form").html('REMOVE ITEM');
+                    break;
+                case "updatecellvalue":
+                    $("#title_form").html('EDIT VALUE');
+                    $("#itemtype").css("display", "none");
+                    $("#itemvalue").css("display", "none");
+                    break;
+                case "uploaditemfile":
+                    $("#title_form").html('UPLOAD FILE');
+                    $("#filefield").css("display", "block");
+                    $("#itemtype").css("display", "none");
+                    $("#itemcontent").css("display", "none");
+                    $("#itemvalue").css("display", "none");
+                    break;
+            }
+            $("#form").css("visibility", "visible");
+            $("#action").val(action);
+            $("#course_code").val(code);
+            $("#course_id").val(code);
+            $("#course_sheet").val(sheet);
+            $("#course_cell").val(cell);
+            $("#course_row").val(row);
+            $("#course_value").val(value);
+            $("#course_value2").val(value2);
+            $('#course_itemtype').val(type);
+            $("#output").html('');
+        }
+
+        function update(code, sheet, cell, row, value)
+        {
+            perform('updatecellvalue', code, sheet, cell, row, "SOURCE", value, '')
+        }
+
+        function closeform()
+        {
+            $("#form").css("visibility", "hidden");
+        }
+
+        function send_data()
+        {
+            p = 'actions.php';
+            //var inputs = $("#main").serialize();
+            var fd = new FormData($("#main")[0]);
+            //console.log(inputs);
+            //return;
+            $.ajax({
+                type: "POST",
+                url: p,
+                data: fd,
+                success: function (msg) {
+                    $("#output").html(msg);
+                    //closeform();
+                }
+                ,
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+        }
+    </script>
+{% endblock %}{# empty Twig template #}
+{# empty Twig template #}

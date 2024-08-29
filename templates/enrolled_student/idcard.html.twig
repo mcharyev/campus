@@ -1,0 +1,165 @@
+{% extends 'main.html.twig' %}
+{% block customcss %}
+    <style>
+        .extrasmall {font-size:10px;}
+        .today_class {background-color:green;color:#fff;}
+        .everyday_class {}
+        .card {
+            border: 1px solid gray;
+            width: 510px;
+            height: 320px;
+            font-family: Arial, sans-serif;
+            background-image: url('/build/images/background.jpg');
+            margin-right: 30px;
+            margin-bottom:30px;
+            float:left;
+            break-after: avoid-page;
+            break-before: avoid-page;
+        }
+        @media print  
+        {
+            .card{
+                page-break-inside: avoid;
+            }
+        }
+        .toprow {
+            font-weight:bold;
+            font-size: 15px;
+            padding: 10px;
+            text-align: center;
+            border:0px solid purple;
+        }
+        .emblem
+        {
+            width: 60px;
+            float:left;
+            border:0px solid purple;
+        }
+        .university
+        {
+            float:left;
+            width: 350px;
+            font-size: 18px;
+            border:0px solid purple;
+        }
+        .flag {
+            width: 60px;
+            float:left;
+            border:0px solid purple;
+        }
+        .emblemimage
+        {
+            height:60px;
+        }
+        .flagimage
+        {
+            height:50px;
+        }
+
+        .midrow {
+            font-size: 15px;
+            padding: 5px;
+            margin-left:10px;
+            border:0px solid red;
+        }
+        .leftpanel
+        {
+            float:left;
+            width: 200px;
+        }
+        .midpanel
+        {
+            border:0px solid green;
+            float:left;
+            font-weight:bold;
+            font-size: 25px;
+        }
+        .status
+        {
+            font-size:20px;
+            font-weight:bold;
+        }
+        .name
+        {
+            font-size:17px;
+            height:24px;
+            font-weight: 600;
+        }
+        .barcode
+        {
+            margin-top:10px;
+        }
+        .years
+        {
+            margin-top: 50px;
+            margin-left:10px;
+            margin-right:10px;
+            font-size:35px;
+            font-weight:bold;
+            text-align:right;
+        }
+        .rightpanel
+        {
+            border:0px solid blue;
+            float:left;
+            text-align:center;
+            width: 160px;
+        }
+        .bottomrow {
+            background-color: #84694d;
+            color: black;
+            font-weight:bold;
+            font-size: 15px;
+            padding: 10px;
+        }
+        .ILIR
+        {
+            background-color: #84694d;
+            color: white;            
+        }
+        .SHS
+        {
+            background-color: #fac500;
+            color: black;            
+        }
+        .IEM
+        {
+            background-color: #006400;
+            color: white;            
+        }
+        .IT
+        {
+            background-color: #2e6cf7;
+            color: white;            
+        }
+        .LLD
+        {
+            background-color: #fac500;
+            color: black;            
+        }
+        .majorname
+        {
+
+        }
+        .photo {
+            height: 165px;
+        }
+
+    </style>
+{% endblock %}
+{% block moduletitle %}ID Cards{% endblock %}
+{% block main %}
+    {% set today_session=0 %}
+    {% set today_type=0 %}
+    <div style="margin:auto;">
+        <h2>ID Cards - {{ group.letterCode }}</h2> 
+        <p>
+            {{ content|raw }}
+    </div>
+{% endblock %}
+{% block customjs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+        });
+    </script>
+{% endblock %}

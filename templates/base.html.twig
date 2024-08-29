@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}Campus {% block moduletitle %}{% endblock %} {% endblock %}</title>
+        {% block stylesheets %}
+            {{ encore_entry_link_tags('app') }}
+        {% endblock %}
+        <link rel="stylesheet" type="text/css" href="/build/dataTable/datatables.min.css">
+        <link rel="shortcut icon" href="/build/images/favicon.ico" />
+        {% block customcss %}
+            <style>
+                .jtable-dialog-form input[type="text"]
+                {
+                    min-width: 200px;
+                }
+
+                .jtable-dialog-form {
+                    display: block;
+                    width: 700px;
+                    -moz-column-gap:40px;
+                    -webkit-column-gap:40px;
+                    column-gap:40px;
+                    -moz-column-count:2;
+                    -webkit-column-count:2;
+                    column-count:2;
+                }
+            </style>
+        {% endblock %}
+    </head>
+    <body>
+        {% block body %}
+            {% block navbar %}
+            {% endblock %}
+            <div style="margin-top:70px;margin-left:10px;margin-right:10px;">
+                <!--<div class="row" style="">
+                 <div class="col">-->
+                {% for message in app.flashes('success') %}
+                    <div class="alert alert-success">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+                {% if is_granted('ROLE_USER') %}
+                    {% block main %}
+                    {% endblock %}
+                {% else %}
+                    You are not signed in! Please sign in <a href='/login/'>here</a>.
+                {% endif %}
+            </div>
+            <!--</div></div>-->
+            <div class="modal fade" id="mainModal" tabindex="-1" role="dialog" aria-labelledby="mainModalTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="mainModalTitle">Title</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="mainModalBody">
+                            ...
+                        </div>
+                        <div class="modal-footer" id="mainModalFooter">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endblock %}
+        {% block javascripts %}
+            {{ encore_entry_script_tags('app') }}
+        {% endblock %}
+        <script type="text/javascript" charset="utf8" src="/build/dataTable/datatables.min.js"></script>
+        {% block customjs %}
+        {% endblock %}
+        <script>
+            $(function () { //shorthand document.ready function
+                $('form[name="searchform"]').on('submit', function (e) { //use on if jQuery 1.7+
+                    e.preventDefault();  //prevent form from submitting
+                    search();
+                });
+            });
+        </script>
+    </body>
+</html>
